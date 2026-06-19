@@ -6,8 +6,9 @@ Last updated: 2026-06-19
 
 The simulator, hardware-dependent actuator, energy layer, deterministic reference profiles,
 trajectory logging, controller-independent metrics, heuristic PID controllers, and visual
-validation suite are implemented and verified. Development remains at the longitudinal MPC design
-boundary.
+validation suite are implemented and verified. A searchable hierarchical MkDocs website now maps
+the complete architecture, implementation, tests, evidence, and planned work. Development remains
+at the longitudinal MPC design boundary.
 
 ## Completed
 
@@ -26,6 +27,8 @@ boundary.
 - Added longitudinal speed PID and lateral centerline PID controllers for pre-MPC validation.
 - Added a reproducible visual-validation command that generates an actuator plot, speed/lateral/
   energy dashboard, top-down GIF and PNG, trajectories, and a machine-readable pass/fail report.
+- Added a Material for MkDocs website with 17 hierarchical pages, Mermaid architecture/data-flow
+  diagrams, equations, implementation links, source-file inventory, and requirement traceability.
 - Added core and optional MetaDrive smoke-test commands.
 - Added initial unit tests for configuration, interpolation, hardware effects, saturation, and
   energy accounting.
@@ -53,6 +56,9 @@ boundary.
   RMSE and 0.597 m maximum absolute error.
 - Energy reconstruction residual was 0 Wh and driveline power residual stayed below
   1.1×10⁻¹¹ W in both live scenarios.
+- `mkdocs build --strict`: passed; browser QA confirmed nested navigation, rendered Mermaid/math,
+  validation assets, detailed-page links, generated search index, and a 390 px responsive layout
+  without horizontal overflow.
 
 ## Important limitations
 

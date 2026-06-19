@@ -30,6 +30,7 @@ visualization = [
   "plotly>=5.18,<7",
 ]
 dev = [
+  "mkdocs-material>=9.5,<10",
   "pytest>=8,<9",
   "pytest-cov>=5,<7",
   "ruff>=0.5,<1",

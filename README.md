@@ -57,3 +57,24 @@ early, the vehicle leaves its lane, or the independent driveline/energy balances
 
 See [`project_status.md`](project_status.md) for implemented features, verification results, and
 next work.
+
+## Hierarchical documentation website
+
+Install the development dependencies and run the local documentation site:
+
+```bash
+python -m pip install -e '.[dev]'
+mkdocs serve
+```
+
+Open the displayed local URL to browse architecture, physical models, simulation, controllers,
+experiments, optimization, validation, configuration, source files, and requirement traceability.
+
+Build ordinary static HTML with strict link checking:
+
+```bash
+mkdocs build --strict
+```
+
+The generated website is written to `site/`. Documentation source lives under `docs/`; navigation
+and theme settings live in `mkdocs.yml`.
