@@ -6,11 +6,11 @@ import csv
 from dataclasses import asdict, dataclass
 from math import sqrt
 from pathlib import Path
-from typing import Protocol, Sequence
+from typing import Callable, Protocol, Sequence
 
 import numpy as np
 
-from .metadrive_env import LeadVehicleState
+from .metadrive_env import LaneState, LeadVehicleState
 from .powertrain import EnergyState, PowertrainStep
 
 
@@ -48,6 +48,12 @@ HIGHWAY_PROFILE = SpeedProfile(
     speed_mps=(16.0, 24.0, 24.0, 30.0, 30.0, 22.0),
 )
 
+CENTERLINE_PROFILE = SpeedProfile(
+    name="curved_centerline",
+    time_s=(0.0, 5.0, 30.0),
+    speed_mps=(0.0, 12.0, 12.0),
+)
+
 
 @dataclass(frozen=True, slots=True)
 class ControlObservation:
@@ -63,6 +69,12 @@ class LongitudinalController(Protocol):
     def reset(self) -> None: ...
 
     def command(self, observation: ControlObservation) -> float: ...
+
+
+class LateralController(Protocol):
+    def reset(self) -> None: ...
+
+    def command(self, lane: LaneState) -> float: ...
 
 
 @dataclass(slots=True)
@@ -102,6 +114,8 @@ class LongitudinalEnvironment(Protocol):
 
     def lead_vehicle_state(self, lateral_tolerance_m: float = 2.0) -> LeadVehicleState | None: ...
 
+    def lane_state(self) -> LaneState: ...
+
 
 @dataclass(frozen=True, slots=True)
 class TrajectoryPoint:
@@ -118,6 +132,12 @@ class TrajectoryPoint:
     lead_gap_m: float | None
     lead_speed_mps: float | None
     saturated: bool
+    steering_command: float
+    lateral_error_m: float
+    heading_error_rad: float
+    motor_mechanical_power_w: float
+    motor_efficiency: float
+    actuator_speed_mps: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,6 +150,8 @@ class EpisodeMetrics:
     peak_jerk_mps3: float
     minimum_gap_m: float | None
     saturation_fraction: float
+    lateral_rmse_m: float
+    maximum_abs_lateral_error_m: float
     completed: bool
 
 
@@ -163,6 +185,8 @@ def _metrics(points: Sequence[TrajectoryPoint], net_battery_wh: float, completed
         peak_jerk_mps3=max(abs(p.jerk_mps3) for p in points),
         minimum_gap_m=min(gaps) if gaps else None,
         saturation_fraction=sum(p.saturated for p in points) / len(points),
+        lateral_rmse_m=sqrt(sum(p.lateral_error_m**2 for p in points) / len(points)),
+        maximum_abs_lateral_error_m=max(abs(p.lateral_error_m) for p in points),
         completed=completed,
     )
 
@@ -171,11 +195,15 @@ def run_speed_profile(
     env: LongitudinalEnvironment,
     profile: SpeedProfile,
     controller: LongitudinalController,
+    lateral_controller: LateralController | None = None,
+    step_callback: Callable[[int, LongitudinalEnvironment], None] | None = None,
 ) -> EpisodeResult:
     """Run one deterministic profile and collect controller-independent system metrics."""
 
     env.reset()
     controller.reset()
+    if lateral_controller is not None:
+        lateral_controller.reset()
     dt = env.control_interval_s
     previous_speed = env.speed_mps
     previous_acceleration = 0.0
@@ -197,7 +225,9 @@ def run_speed_profile(
             lead_speed_mps=None if lead is None else lead.speed_mps,
         )
         requested_force = controller.command(observation)
-        _, _, terminated, truncated, _ = env.step((0.0, requested_force))
+        lane = env.lane_state()
+        steering = 0.0 if lateral_controller is None else lateral_controller.command(lane)
+        _, _, terminated, truncated, _ = env.step((steering, requested_force))
         powertrain = env.last_powertrain_step
         if powertrain is None:
             raise RuntimeError("environment did not expose its powertrain step")
@@ -225,8 +255,18 @@ def run_speed_profile(
                 lead_gap_m=observation.lead_gap_m,
                 lead_speed_mps=observation.lead_speed_mps,
                 saturated=powertrain.saturated,
+                steering_command=steering,
+                lateral_error_m=lane.lateral_error_m,
+                heading_error_rad=lane.heading_error_rad,
+                motor_mechanical_power_w=(
+                    powertrain.motor_torque_nm * powertrain.motor_speed_rad_s
+                ),
+                motor_efficiency=powertrain.motor_efficiency,
+                actuator_speed_mps=powertrain.vehicle_speed_mps,
             )
         )
+        if step_callback is not None:
+            step_callback(index, env)
         previous_speed = speed
         previous_acceleration = acceleration
         previous_force = requested_force
@@ -240,4 +280,3 @@ def run_speed_profile(
         metrics=_metrics(points, env.energy.net_battery_wh, completed),
         trajectory=tuple(points),
     )
-

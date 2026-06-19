@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from codesign.metadrive_env import LeadVehicleState
+from codesign.metadrive_env import LaneState, LeadVehicleState
 from codesign.powertrain import EnergyState, PowertrainStep
 from codesign.scenarios import ProportionalForceController, SpeedProfile, run_speed_profile
 
@@ -24,6 +24,9 @@ class FakeEnvironment:
     def lead_vehicle_state(self, lateral_tolerance_m: float = 2.0):
         return LeadVehicleState(30.0, 5.0)
 
+    def lane_state(self):
+        return LaneState(0.2, 0.01, 3.5)
+
     def step(self, action):
         _, force = action
         acceleration = force / 1000.0
@@ -36,6 +39,7 @@ class FakeEnvironment:
         self.last_powertrain_step = PowertrainStep(
             requested_wheel_force_n=force,
             applied_wheel_force_n=force,
+            vehicle_speed_mps=self.speed_mps,
             motor_speed_rad_s=0.0,
             motor_torque_nm=0.0,
             motor_efficiency=0.9,
@@ -63,6 +67,7 @@ def test_speed_profile_runner_records_independent_metrics(tmp_path) -> None:
     assert result.metrics.distance_m > 0
     assert result.metrics.net_battery_wh > 0
     assert result.metrics.minimum_gap_m == pytest.approx(30.0)
+    assert result.metrics.lateral_rmse_m == pytest.approx(0.2)
     assert len(result.trajectory) == 11
 
     output = tmp_path / "trajectory.csv"

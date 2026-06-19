@@ -13,6 +13,7 @@ from .efficiency import EfficiencyMap, default_motoring_map
 class PowertrainStep:
     requested_wheel_force_n: float
     applied_wheel_force_n: float
+    vehicle_speed_mps: float
     motor_speed_rad_s: float
     motor_torque_nm: float
     motor_efficiency: float
@@ -128,6 +129,7 @@ class EVPowertrain:
         return PowertrainStep(
             requested_wheel_force_n=requested_wheel_force_n,
             applied_wheel_force_n=applied_force,
+            vehicle_speed_mps=vehicle_speed_mps,
             motor_speed_rad_s=omega,
             motor_torque_nm=applied_torque,
             motor_efficiency=efficiency,

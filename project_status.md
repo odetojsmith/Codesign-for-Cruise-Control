@@ -5,8 +5,9 @@ Last updated: 2026-06-19
 ## Current milestone
 
 The simulator, hardware-dependent actuator, energy layer, deterministic reference profiles,
-trajectory logging, and controller-independent metrics are implemented and verified. Development
-is now paused at the longitudinal MPC design boundary, as requested.
+trajectory logging, controller-independent metrics, heuristic PID controllers, and visual
+validation suite are implemented and verified. Development remains at the longitudinal MPC design
+boundary.
 
 ## Completed
 
@@ -22,6 +23,9 @@ is now paused at the longitudinal MPC design boundary, as requested.
 - Added deterministic urban and highway speed profiles, a controller protocol, a temporary
   proportional-force baseline, traffic/lead-vehicle detection, trajectory CSV logging, and
   controller-independent metrics.
+- Added longitudinal speed PID and lateral centerline PID controllers for pre-MPC validation.
+- Added a reproducible visual-validation command that generates an actuator plot, speed/lateral/
+  energy dashboard, top-down GIF and PNG, trajectories, and a machine-readable pass/fail report.
 - Added core and optional MetaDrive smoke-test commands.
 - Added initial unit tests for configuration, interpolation, hardware effects, saturation, and
   energy accounting.
@@ -31,7 +35,7 @@ is now paused at the longitudinal MPC design boundary, as requested.
 - Created an isolated Python 3.11 virtual environment and installed MetaDrive 0.4.3 plus the
   development dependencies.
 - `ruff check .`: passed.
-- `pytest`: 16 tests passed.
+- `pytest`: 19 tests passed.
 - `codesign-smoke --core-only`: passed; nominal mass 1575.0 kg, net energy 2.675 Wh, and
   recovered energy 1.396 Wh for the deterministic four-point core exercise.
 - `codesign-smoke --metadrive`: passed; MetaDrive initialized headlessly, downloaded and loaded
@@ -43,6 +47,12 @@ is now paused at the longitudinal MPC design boundary, as requested.
   2.052 m/s³, and zero powertrain saturation.
 - Deterministic traffic test: triggered traffic spawned under seed 7 and the nearest lead vehicle
   was detected with gap and speed measurements.
+- Curved-track PID validation from a 1.0 m initial offset: completed 318.19 m with 0.377 m lateral
+  RMSE and 1.0 m maximum absolute error, remaining inside the ±1.75 m lane boundaries.
+- Urban stop-go PID validation from a 0.5 m initial offset: completed 321.96 m with 0.162 m lateral
+  RMSE and 0.597 m maximum absolute error.
+- Energy reconstruction residual was 0 Wh and driveline power residual stayed below
+  1.1×10⁻¹¹ W in both live scenarios.
 
 ## Important limitations
 

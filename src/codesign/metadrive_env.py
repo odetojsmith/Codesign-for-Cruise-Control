@@ -19,6 +19,13 @@ class LeadVehicleState:
     speed_mps: float
 
 
+@dataclass(frozen=True, slots=True)
+class LaneState:
+    lateral_error_m: float
+    heading_error_rad: float
+    lane_width_m: float
+
+
 @dataclass(slots=True)
 class MetaDriveEVEnv:
     """Composition wrapper that keeps MetaDrive an optional dependency.
@@ -33,6 +40,7 @@ class MetaDriveEVEnv:
     seed: int = 7
     map_sequence: str = "S"
     traffic_density: float = 0.0
+    spawn_lateral_m: float = 0.0
     _env: Any = field(init=False, repr=False)
     _max_engine_force_n: float = field(init=False, repr=False)
     _max_regen_force_n: float = field(init=False, repr=False)
@@ -69,6 +77,7 @@ class MetaDriveEVEnv:
                 # reverse motion at zero speed.
                 "enable_reverse": True,
                 "mass": self.powertrain.total_vehicle_mass_kg,
+                "spawn_lateral": self.spawn_lateral_m,
             },
             "random_dynamics": {
                 "max_engine_force": (engine_force_per_wheel, engine_force_per_wheel),
@@ -142,6 +151,33 @@ class MetaDriveEVEnv:
             if nearest is None or candidate.gap_m < nearest.gap_m:
                 nearest = candidate
         return nearest
+
+    def lane_state(self) -> LaneState:
+        ego = self._env.agent
+        navigation = ego.navigation
+        if ego.lane in navigation.current_ref_lanes:
+            lane = ego.lane
+        else:
+            lane = navigation.current_ref_lanes[0]
+        longitudinal, lateral = lane.local_coordinates(ego.position)
+        lane_heading = float(lane.heading_theta_at(longitudinal + 1.0))
+        heading_error = (lane_heading - float(ego.heading_theta) + 3.141592653589793) % (
+            2.0 * 3.141592653589793
+        ) - 3.141592653589793
+        return LaneState(
+            lateral_error_m=float(lateral),
+            heading_error_rad=heading_error,
+            lane_width_m=float(navigation.get_current_lane_width()),
+        )
+
+    def render_topdown(self, screen_size: tuple[int, int] = (700, 700)) -> Any:
+        return self._env.render(
+            mode="topdown",
+            target_agent_heading_up=False,
+            draw_target_vehicle_trajectory=True,
+            film_size=(2000, 2000),
+            screen_size=screen_size,
+        )
 
     def step(self, action: tuple[float, float]) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         steering, requested_force_n = action

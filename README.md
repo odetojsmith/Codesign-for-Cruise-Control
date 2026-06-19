@@ -44,6 +44,15 @@ python -m codesign.scenario_cli --profile urban
 The generated calibration, metrics, and trajectory files are written under `artifacts/` and are
 intentionally ignored by Git.
 
+Generate the complete actuator/energy/PID validation dashboard and top-down animation with:
+
+```bash
+python -m codesign.validation_cli
+```
+
+The command fails if force calibration exceeds 0.1% error, either driving episode terminates
+early, the vehicle leaves its lane, or the independent driveline/energy balances do not close.
+
 ## Current state
 
 See [`project_status.md`](project_status.md) for implemented features, verification results, and
