@@ -39,6 +39,8 @@ all = [
 ]
 
 [project.scripts]
+codesign-calibrate = "codesign.calibration:main"
+codesign-scenario = "codesign.scenario_cli:main"
 codesign-smoke = "codesign.smoke:main"
 
 [tool.setuptools.packages.find]
@@ -51,4 +53,3 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-

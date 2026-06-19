@@ -58,3 +58,8 @@ def test_auxiliary_load_consumes_energy_at_rest() -> None:
     step = powertrain.evaluate(0.0, 0.0)
     assert step.battery_power_w == pytest.approx(powertrain.battery.auxiliary_power_w)
 
+
+def test_regenerative_force_cannot_reverse_vehicle_from_rest() -> None:
+    powertrain = EVPowertrain(HardwareDesign(9.0, 1.0))
+    step = powertrain.evaluate(-2000.0, 0.0)
+    assert step.applied_wheel_force_n == pytest.approx(0.0)

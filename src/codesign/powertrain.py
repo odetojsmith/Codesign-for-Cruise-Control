@@ -89,16 +89,20 @@ class EVPowertrain:
     def evaluate(self, requested_wheel_force_n: float, vehicle_speed_mps: float) -> PowertrainStep:
         """Limit a requested wheel force and evaluate instantaneous battery power."""
 
+        if requested_wheel_force_n < 0 and vehicle_speed_mps <= 0.1:
+            requested_for_limits_n = 0.0
+        else:
+            requested_for_limits_n = requested_wheel_force_n
         omega = self.motor_speed(vehicle_speed_mps)
-        regenerating = requested_wheel_force_n < 0 and vehicle_speed_mps > 0
+        regenerating = requested_for_limits_n < 0 and vehicle_speed_mps > 0
         eta_g = self.vehicle.final_drive_efficiency
         ratio = self.hardware.final_drive_ratio
         radius = self.vehicle.wheel_radius_m
 
         if regenerating:
-            requested_torque = requested_wheel_force_n * radius * eta_g / ratio
+            requested_torque = requested_for_limits_n * radius * eta_g / ratio
         else:
-            requested_torque = requested_wheel_force_n * radius / (eta_g * ratio)
+            requested_torque = requested_for_limits_n * radius / (eta_g * ratio)
 
         limit = self.torque_limit(omega, regenerating=regenerating)
         applied_torque = max(-limit, min(limit, requested_torque))
@@ -133,4 +137,3 @@ class EVPowertrain:
             saturated=saturated,
             speed_limited=speed_limited,
         )
-
