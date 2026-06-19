@@ -1,0 +1,256 @@
+# Hardware–Controller Co-Design for an Autonomous Electric Vehicle
+
+## 1. Project objective
+
+Build a reproducible autonomous-driving example that demonstrates when integrated hardware–controller co-design produces a better energy–tracking tradeoff than the conventional sequential workflow.
+
+The vehicle follows planner-provided speed profiles while respecting traffic and safety constraints. The hardware design selects the final-drive ratio and motor size. The controller design tunes a longitudinal model-predictive controller (MPC). Designs are compared at matched tracking requirements rather than through an arbitrary weighted score.
+
+The primary claim will be:
+
+> For the same speed-tracking RMSE limit and safety constraints, co-design can consume less battery energy than conventional separate hardware and controller optimization.
+
+If the resulting Pareto fronts cross, the project will report the operating ranges where each method is preferable instead of claiming universal superiority.
+
+## 2. Simulation architecture
+
+### 2.1 MetaDrive optimization backend
+
+Use [MetaDrive](https://metadrive-simulator.readthedocs.io/en/latest/) as the primary simulator. It supplies:
+
+- Road networks, traffic actors, collisions, and scenario generation.
+- Vehicle rigid-body and tire/contact simulation.
+- Gym-compatible reset/step interfaces.
+- Top-down and 3D rendering.
+- Sensor/state access, recording, and replay.
+- Fast headless execution for optimization.
+
+Optimization runs will use headless mode. Only baseline runs, selected Pareto designs, and final comparison episodes will be rendered and recorded.
+
+### 2.2 Project-owned EV powertrain and energy layer
+
+MetaDrive does not natively model the complete electric power path needed for this study: motor efficiency maps, inverter/battery losses, regenerative-braking efficiency, state of charge, and electrical energy in Wh. The project will therefore add a compact EV powertrain layer around MetaDrive.
+
+MetaDrive remains the source of vehicle motion and environment state. At every simulation step, the EV layer will:
+
+1. Read vehicle speed, acceleration, road grade, and commanded traction/braking action.
+2. Convert wheel speed and force to motor speed and torque using the candidate final-drive ratio.
+3. Enforce motor torque, power, speed, and regenerative-braking limits for the candidate motor size.
+4. Map feasible motor torque back to the throttle/brake command applied to MetaDrive.
+5. Look up motoring or regeneration efficiency from a tabulated motor map.
+6. Integrate battery power to obtain net energy consumption and state of charge.
+
+This is not a second vehicle simulator. It is an actuator-limit and energy-accounting model coupled to MetaDrive's vehicle and environment simulation.
+
+### 2.3 CARLA validation backend
+
+After optimization is complete, validate only the conventional baseline and selected Pareto-optimal co-designs in CARLA on the Windows PC with the RTX 5060 Ti. CARLA validation will use its configurable `final_ratio`, torque curve, mass, drag, and vehicle-control APIs.
+
+CARLA will not be placed inside the optimization loop because thousands of CARLA episodes would be unnecessarily expensive. The same speed profiles, hardware records, controller parameters, and evaluation metrics will be exported through a backend-neutral experiment configuration.
+
+## 3. Models and design variables
+
+### 3.1 Hardware design
+
+Define
+
+\[
+h=(g,s_m),
+\]
+
+where:
+
+- \(g\in[6,12]\) is the fixed motor-to-wheel speed ratio:
+  \[
+  g=\omega_m/\omega_w.
+  \]
+- \(s_m\in[0.6,1.4]\) is motor size relative to a baseline motor.
+
+Use a baseline motor with 150 kW peak power, 300 Nm peak torque, 12,000 rpm maximum speed, and 75 kg mass. Scaling changes peak torque, peak power, and motor mass linearly while preserving the normalized efficiency-map shape. Maximum motor speed remains fixed.
+
+Use
+
+\[
+\omega_m=g\frac{v}{r_w},\qquad
+T_m=\frac{F_w r_w}{\eta_g g}.
+\]
+
+The larger motor's mass is added to the MetaDrive vehicle mass. The final-drive efficiency is fixed at 0.97 and wheel radius at 0.31 m.
+
+### 3.2 EV energy model
+
+Use a tabulated, interpolated motor-efficiency map indexed by normalized motor speed and torque. Keep motoring and regenerative efficiencies distinct.
+
+For motoring,
+
+\[
+P_{batt}=\frac{T_m\omega_m}{\eta_m\eta_{inv}}+P_{aux}.
+\]
+
+For regeneration,
+
+\[
+P_{batt}=T_m\omega_m\eta_{regen}\eta_{inv}+P_{aux},
+\]
+
+where negative battery power represents recovered energy. Integrate battery power over time and report gross traction energy, recovered energy, net Wh, and Wh/km. Use inverter efficiency 0.97, auxiliary load 500 W, and a 60 kWh battery. State of charge will be tracked but battery voltage and thermal dynamics are out of scope for version one.
+
+### 3.3 Controller design
+
+Use a constrained longitudinal MPC with a 0.2 s control interval and a 20-step prediction horizon. MetaDrive handles lateral lane following with a fixed built-in or project-supplied lateral controller so lateral behavior is not optimized.
+
+The MPC tracks the planner speed command and safe following gap while respecting hardware-dependent traction/braking limits. Normalize every internal objective term, fix the tracking coefficient to one, and tune only
+
+\[
+\theta=(\log_{10}\lambda_E,\log_{10}\lambda_{\Delta u}),
+\qquad \log_{10}\lambda_E,\log_{10}\lambda_{\Delta u}\in[-3,3].
+\]
+
+These are internal controller parameters only. They do not define the final system score. The MPC will be implemented with CVXPY and OSQP, using a convex local energy surrogate; final energy is always calculated by the independent nonlinear EV energy layer.
+
+## 4. Optimization and fair comparison
+
+### 4.1 Final evaluation problem
+
+For tracking limits
+
+\[
+\epsilon\in\{0.1,0.2,0.4,0.8\}\ \text{m/s},
+\]
+
+solve
+
+\[
+\begin{aligned}
+\min_{h,\theta}\quad & E_{net}(h,\theta)\\
+\text{s.t.}\quad
+& \operatorname{RMSE}_v(h,\theta)\leq\epsilon,\\
+& d_{min}\geq d_{safe},\\
+& |a|\leq 3.0\ \text{m/s}^2,\\
+& |j|\leq 4.0\ \text{m/s}^3,\\
+& \text{motor, battery, and road constraints are satisfied.}
+\end{aligned}
+\]
+
+Report RMSE and energy separately and compare methods at the same \(\epsilon\). Also plot the complete energy–RMSE Pareto fronts.
+
+### 4.2 Conventional separate-design baseline
+
+First select hardware without a feedback controller using a backward-facing drive-cycle calculation that assumes exact prescribed-speed following.
+
+For each hardware candidate:
+
+- Check 120 km/h top speed.
+- Check 0–100 km/h acceleration within 10 s using maximum feasible torque.
+- Check a 20% grade at 30 km/h.
+- Reject candidates violating motor torque, power, or speed limits.
+- Compute drive-cycle Wh/km from the same efficiency map.
+
+Choose the feasible candidate with minimum Wh/km. If candidates are within 0.5%, choose the one with lower motor mass. Freeze that hardware, then tune the MPC to minimize closed-loop energy for each RMSE bound.
+
+### 4.3 Integrated co-design
+
+Sweep the hardware grid
+
+- \(g=6,6.5,\ldots,12\).
+- \(s_m=0.6,0.7,\ldots,1.4\).
+
+For each hardware pair, use 60 seeded Optuna trials to tune the two MPC parameters. Cache every simulation result. For each RMSE limit, retain the minimum-energy feasible controller for that hardware and then select the minimum-energy hardware–controller pair globally.
+
+### 4.4 Alternating optimization illustration
+
+Initialize from the conventional hardware and nominal MPC. Then alternate:
+
+1. Optimize controller parameters with hardware fixed.
+2. Optimize hardware variables with controller fixed.
+
+Stop after six iterations or when net-energy improvement is below 0.1%. Treat this as an algorithmic illustration, not proof of global optimality; compare its result with the nested hardware-grid result.
+
+## 5. Scenarios and outputs
+
+Optimize over three deterministic training scenarios:
+
+- Urban stop-and-go, 0–50 km/h.
+- Highway speed changes, 60–100 km/h.
+- Mixed route with road grades from -6% to +6%.
+
+Validate on unseen mixed traffic, emergency lead-vehicle braking, payload variation of ±10%, drag variation of ±10%, and road-friction variation. Use fixed scenario seeds shared by every method.
+
+Generate:
+
+- Speed command and achieved-speed plots.
+- Tracking-error, acceleration, jerk, and following-gap plots.
+- Battery power and cumulative-energy plots.
+- Motor operating points over the efficiency map.
+- Hardware-space objective and feasibility heatmaps.
+- Alternating-optimization convergence plots.
+- Energy–RMSE Pareto fronts for separate design and co-design.
+- MetaDrive top-down and 3D videos for selected designs.
+- A CARLA validation table and videos after migration to Windows.
+
+## 6. Software structure and interfaces
+
+Use Python 3.11 with MetaDrive, NumPy, SciPy, Pandas, CVXPY, OSQP, Optuna, Gymnasium, Matplotlib, Plotly, PyYAML, and pytest.
+
+Core immutable records:
+
+- `HardwareDesign(final_drive_ratio, motor_scale)`.
+- `ControllerDesign(log_energy_weight, log_slew_weight)`.
+- `ScenarioConfig(name, seed, route, speed_profile, traffic_config)`.
+- `SimulationResult(rmse_mps, gross_wh, regen_wh, net_wh, wh_per_km, minimum_gap_m, peak_accel_mps2, peak_jerk_mps3, violations, trajectories)`.
+
+Provide commands to:
+
+1. Verify MetaDrive and render a smoke-test episode.
+2. Run conventional hardware sizing.
+3. Run separate controller optimization.
+4. Run integrated co-design.
+5. Run alternating optimization.
+6. Generate all figures, tables, and MetaDrive recordings.
+7. Export selected designs and scenarios for CARLA.
+8. Run CARLA validation on Windows.
+
+Every experiment writes its configuration, dependency versions, random seeds, design variables, aggregate metrics, and trajectories to a timestamped result directory. Optimization resumes from cached evaluations after interruption.
+
+## 7. Tests and acceptance criteria
+
+Unit tests will verify:
+
+- Final-drive speed/torque conversion.
+- Motor scaling and added vehicle mass.
+- Interpolation and bounds of the efficiency map.
+- Motoring, auxiliary, and regenerative energy integration.
+- Motor torque, power, speed, and regeneration saturation.
+- Deterministic scenario generation and result caching.
+- RMSE, Wh/km, gap, acceleration, and jerk metrics.
+
+Integration tests will verify:
+
+- MetaDrive can run headlessly and render one saved episode.
+- Hardware changes alter feasible acceleration and maximum speed in the expected direction.
+- MPC actions obey hardware-dependent limits.
+- Infeasible designs are reported without crashing optimization.
+- Separate and co-design methods use identical scenarios and evaluation functions.
+- A selected experiment can be replayed from its saved configuration.
+
+The demonstration succeeds when at least one practically relevant RMSE bound shows lower validation Wh/km for co-design without additional safety or comfort violations. Results must remain qualitatively consistent across unseen scenarios and at least five scenario-seed sets. If these conditions are not met, report the non-dominating Pareto fronts without forcing the intended conclusion.
+
+## 8. Implementation order
+
+1. Create the environment, dependency lock, configuration schema, and smoke test.
+2. Integrate MetaDrive scenarios, state extraction, rendering, and replay.
+3. Implement and test the EV powertrain and energy layer.
+4. Implement the hardware-dependent actuator wrapper.
+5. Implement and test longitudinal MPC.
+6. Implement conventional hardware sizing and separate controller tuning.
+7. Implement nested and alternating co-design with caching and parallel workers.
+8. Run training and unseen validation scenarios; generate reports and MetaDrive videos.
+9. Export the selected designs through the backend-neutral configuration.
+10. On Windows, install CARLA and implement the thin CARLA adapter for final validation.
+
+## 9. Explicit boundaries
+
+- Version one optimizes longitudinal behavior only; lateral control is fixed.
+- Battery voltage sag, temperature, degradation, and motor thermal dynamics are excluded.
+- MetaDrive is the authoritative optimization environment; CARLA is a transfer/validation check.
+- CARLA disagreement will be reported as a simulator-transfer result, not hidden by retuning hardware.
