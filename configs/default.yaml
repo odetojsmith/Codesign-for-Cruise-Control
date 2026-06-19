@@ -1,0 +1,26 @@
+hardware:
+  final_drive_ratio: 9.0
+  motor_scale: 1.0
+
+vehicle:
+  base_mass_kg: 1500.0
+  wheel_radius_m: 0.31
+  final_drive_efficiency: 0.97
+
+motor:
+  base_peak_torque_nm: 300.0
+  base_peak_power_kw: 150.0
+  max_speed_rpm: 12000.0
+  base_mass_kg: 75.0
+  regenerative_torque_fraction: 0.60
+
+battery:
+  capacity_kwh: 60.0
+  inverter_efficiency: 0.97
+  auxiliary_power_w: 500.0
+
+simulation:
+  control_interval_s: 0.2
+  seed: 7
+  use_render: false
+
