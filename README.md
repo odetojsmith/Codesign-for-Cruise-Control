@@ -41,6 +41,7 @@ codesign-optimize --quick
 codesign-hardware-sensitivity
 codesign-mountain-shuttle --quick
 codesign-generality-dataset --quick
+codesign-matched-rmse-test
 ```
 
 The full `codesign-optimize` grid is intentionally much larger. Evaluations are cached in SQLite,

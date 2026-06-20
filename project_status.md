@@ -75,13 +75,16 @@ validation, sourced motor data, and CARLA transfer validation are next.
   for every scenario before and after hardware is frozen.
 - Completed 720 training and 90 held-out controller evaluations with a resumable JSON cache after
   rejecting three hardware candidates that violated the shared 120 km/h motor-speed requirement.
+- Added a stricter 240-evaluation held-out test: traditional control is optimized first under
+  RMSE ≤0.4 m/s, then the training-selected hardware must minimize energy without exceeding the
+  traditional controller's achieved RMSE on each scenario.
 
 ## Verification
 
 - Created an isolated Python 3.11 virtual environment and installed MetaDrive 0.4.3 plus the
   development dependencies.
 - `ruff check .`: passed.
-- `pytest`: 47 tests passed.
+- `pytest`: 49 tests passed.
 - `codesign-smoke --core-only`: passed; nominal mass 1575.0 kg, net energy 2.675 Wh, and
   recovered energy 1.396 Wh for the deterministic four-point core exercise.
 - `codesign-smoke --metadrive`: passed; MetaDrive initialized headlessly, downloaded and loaded
@@ -129,6 +132,9 @@ validation, sourced motor data, and CARLA transfer validation are next.
 - With hardware frozen and MPC re-tuned independently on every held-out scenario, selected hardware
   reduced mean test energy from 344.25 to 312.50 Wh/km (9.22%), won all three test cases, and kept
   all RMSE values below the 0.4 m/s threshold without fallback or mission violations.
+- In the matched-RMSE dominance test, selected hardware reduced RMSE and energy simultaneously on
+  every held-out case. RMSE improved by 0.0219–0.0263 m/s, per-scenario energy improved by
+  7.12–9.60%, and mean energy fell from 336.04 to 308.35 Wh/km (8.24%).
 
 ## Important limitations
 

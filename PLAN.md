@@ -352,3 +352,32 @@ Primary evidence is documented in `docs/optimization/generality-dataset.md`; mac
 manifests, evaluations, selections, cache, and report regenerate under
 `artifacts/generality_dataset/`. The selected ratio lies at the shared top-speed-feasible boundary,
 so the next experiment should refine that neighborhood without relaxing motor-speed requirements.
+
+## 12. Recoverable milestone — held-out matched-RMSE dominance
+
+Milestone date: 2026-06-20.
+
+To remove ambiguity from comparisons where both designs merely satisfy the same RMSE threshold,
+the held-out controller test now runs sequential constraints. Traditional hardware is first tuned
+for minimum energy under RMSE ≤0.4 m/s. Its achieved scenario RMSE then becomes the maximum allowed
+RMSE for the training-selected hardware. Both designs receive the same 40-point controller grid.
+
+| Scenario | Traditional RMSE / Wh/km | Training-selected RMSE / Wh/km | Energy reduction |
+|---|---:|---:|---:|
+| Unseen steep | 0.3804 / 397.86 | 0.3541 / 364.99 | 8.26% |
+| Heavy descent | 0.3522 / 338.24 | 0.3278 / 314.16 | 7.12% |
+| Long fast shift | 0.3943 / 272.03 | 0.3723 / 245.91 | 9.60% |
+
+Training-selected hardware has lower RMSE and lower energy in all three held-out scenarios. Mean
+energy decreases from 336.04 to 308.35 Wh/km, an 8.24% reduction. Hardware remains fixed at
+$g=11.5,s_m=0.75$ and was not changed using test information; only controller weights adapt per
+scenario.
+
+Recovery command:
+
+```bash
+.venv/bin/python -m codesign.matched_rmse_test
+```
+
+Evidence is documented in `docs/optimization/matched-rmse-test.md` and regenerates under
+`artifacts/matched_rmse_test/`.
