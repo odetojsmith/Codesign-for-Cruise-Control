@@ -1,14 +1,17 @@
 # Codesign for Cruise Control
 
-This site is the authoritative implementation guide for the autonomous-electric-vehicle
-hardware–controller co-design project. It connects every project claim to its physical model,
-source file, test, and validation evidence.
+This site is the authoritative implementation and evidence guide for the autonomous-electric-
+vehicle hardware–controller co-design project. New readers should begin with the
+[end-to-end project logic](guide/project-logic.md), then inspect the
+[evidence summary](guide/evidence-summary.md) and [next steps](guide/next-steps.md).
 
 !!! info "Current boundary"
     The MetaDrive simulation, hardware-dependent actuator, EV energy accounting, deterministic
     scenarios, grade-aware dynamics, conventional hardware sizing, coordinated lateral control,
-    longitudinal MPC, persistent optimization caching, and quick nested/alternating co-design are
-    implemented. The full-resolution search and unseen-seed validation remain.
+    longitudinal MPC, persistent optimization caching, mountain co-design, train/test hardware
+    selection, matched-RMSE testing, and dense controller sampling are implemented. Broad
+    multi-seed robustness, traceable motor data, local hardware refinement, and CARLA transfer
+    remain.
 
 ## Project question
 
@@ -26,30 +29,26 @@ $$
 
 Here, $h=(g,s_m)$ contains the hardware decisions and $\theta$ contains controller parameters.
 
-## Knowledge map
+## Project argument
 
 ```mermaid
 flowchart TD
-    A["Project question"] --> B["Architecture"]
-    B --> C["Physical models"]
-    B --> D["MetaDrive simulation"]
-    B --> E["Controllers"]
-    C --> C1["Final-drive ratio"]
-    C --> C2["Motor scaling"]
-    C --> C3["Battery energy"]
-    E --> E1["Longitudinal PID"]
-    E --> E2["Lateral PID"]
-    E --> E3["Longitudinal MPC"]
-    D --> F["Scenarios and metrics"]
-    F --> G["Validation evidence"]
-    G --> H["Separate optimization"]
-    G --> I["Integrated co-design"]
+    A["Validate actuator and energy layers"] --> B["Validate PID, MPC, steering, and braking"]
+    B --> C["Show hardware affects closed-loop missions"]
+    C --> D["Define traditional hardware without RMSE"]
+    D --> E["Select hardware using training missions"]
+    E --> F["Freeze hardware and re-tune control on unseen missions"]
+    F --> G["Compare energy at common or matched RMSE"]
+    G --> H["State supported conclusion and limitations"]
 ```
 
 ## Guided entry points
 
 | If you want to understand… | Start here |
 |---|---|
+| The complete reasoning from models to conclusion | [End-to-end project logic](guide/project-logic.md) |
+| The strongest current results and their limits | [Evidence and conclusions](guide/evidence-summary.md) |
+| What should be implemented next and why | [Prioritized next steps](guide/next-steps.md) |
 | How the complete system fits together | [System overview](architecture/system-overview.md) |
 | What information moves through one simulation step | [Data flow](architecture/data-flow.md) |
 | How final drive and motor size affect the car | [Hardware design](models/hardware.md) |
@@ -75,7 +74,7 @@ flowchart TD
 | Curvature-aware speed planner | Implemented | Planner unit tests and curved-route run |
 | Longitudinal MPC | Implemented; sampled tuning | [Formulation and evidence](control/mpc.md) |
 | Separate optimization | Implemented | [Method and initial evidence](optimization/separate-design.md) |
-| Integrated co-design | Implemented; quick grid complete | [Method and initial evidence](optimization/codesign.md) |
+| Integrated co-design | Implemented; mountain and train/test evidence complete | [Evidence summary](guide/evidence-summary.md) |
 | CARLA validation | Planned for Windows | Export adapter not yet implemented |
 
 ## Reproduce the current evidence
@@ -89,6 +88,9 @@ python -m codesign.validation_cli
 python -m codesign.mpc_cli
 codesign-size-hardware
 codesign-optimize --quick
+codesign-generality-dataset --quick
+codesign-matched-rmse-test
+codesign-trained-controller-sweep
 ```
 
 The validation commands fail if actuator, steering, lane, energy, MPC tracking, comfort, or solver

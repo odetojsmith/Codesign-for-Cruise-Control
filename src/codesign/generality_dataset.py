@@ -506,11 +506,11 @@ def _plot_training_pareto(
         alpha=0.72, edgecolor="white", linewidth=0.8,
         label="Hardware with its tuned MPC", zorder=2,
     )
-    axis.plot(
+    axis.scatter(
         [float(row["mean_rmse_mps"]) for row in frontier],
         [float(row["mean_wh_per_km"]) for row in frontier],
-        "-o", color="tab:orange", linewidth=2.6, markersize=8,
-        label="Hardware/controller Pareto frontier", zorder=3,
+        marker="D", color="tab:orange", edgecolor="black", linewidth=0.8, s=105,
+        label="Nondominated hardware samples", zorder=3,
     )
     for row in frontier:
         axis.annotate(

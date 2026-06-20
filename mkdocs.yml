@@ -39,35 +39,35 @@ theme:
 
 nav:
   - Home: index.md
-  - Architecture:
+  - Start Here:
+      - End-to-end project logic: guide/project-logic.md
+      - Evidence and conclusions: guide/evidence-summary.md
+      - Prioritized next steps: guide/next-steps.md
+  - System:
       - System overview: architecture/system-overview.md
       - Data flow: architecture/data-flow.md
-  - Physical Models:
       - Hardware design: models/hardware.md
       - EV energy model: models/energy.md
-  - Simulation:
       - MetaDrive integration: simulation/metadrive.md
-  - Controllers:
+  - Control:
       - Controller interfaces: control/interfaces.md
       - PID controllers: control/pid.md
       - Lateral–longitudinal coordination: control/coordination.md
       - Longitudinal MPC: control/mpc.md
-  - Experiments:
+  - Evidence:
+      - Validation overview: validation/evidence.md
+      - Actuator validation: validation/actuator-validation.md
+      - Braking validation: validation/braking.md
       - Scenarios and metrics: experiments/scenarios.md
-      - Reproducibility: experiments/reproducibility.md
-  - Optimization:
       - MPC weight sampling: optimization/mpc-tuning.md
       - Hardware sensitivity: optimization/hardware-sensitivity.md
+      - Conventional separate design: optimization/separate-design.md
+      - Integrated co-design method: optimization/codesign.md
       - Mountain shuttle: optimization/mountain-shuttle.md
       - Train/test generalization: optimization/generality-dataset.md
       - Matched-RMSE test: optimization/matched-rmse-test.md
-      - Separate design: optimization/separate-design.md
-      - Integrated co-design: optimization/codesign.md
-  - Validation:
-      - Actuator validation methods: validation/actuator-validation.md
-      - Braking validation: validation/braking.md
-      - Evidence and results: validation/evidence.md
-  - Reference:
+  - Reproduce and Reference:
+      - Reproducibility: experiments/reproducibility.md
       - Configuration: reference/configuration.md
       - File inventory: reference/files.md
       - Traceability: reference/traceability.md

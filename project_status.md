@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 
 ## Current milestone
 
@@ -9,8 +9,9 @@ conventional sizing, persistent evaluator, and nested/alternating co-design work
 and verified. The current recoverable milestone is a disjoint four-scenario training and
 three-scenario test experiment with scenario-specific MPC retuning after hardware freezing. The
 training-selected hardware reduces held-out energy while satisfying the shared tracking and mission
-constraints. The searchable MkDocs site records the implementation and evidence. Broader dataset
-validation, sourced motor data, and CARLA transfer validation are next.
+constraints. A dense shared-controller sweep now exposes seven discrete nondominated samples. The
+MkDocs site is organized around the complete project logic, evidence ladder, interpretation limits,
+and prioritized roadmap. Matched-protocol dual frontiers are the immediate next experiment.
 
 ## Completed
 
@@ -84,13 +85,17 @@ validation, sourced motor data, and CARLA transfer validation are next.
 - Added a training hardware RMSE–energy Pareto frontier after independent MPC tuning. The
   traditional point is strictly dominated by $g=10.5,s_m=0.9$, which lowers mean RMSE from
   0.35378 to 0.35284 m/s and lowers mean energy by 10.12%.
+- Added a 40-controller, 160-run dense sweep for fixed trained hardware. It exposes seven
+  nondominated controller samples without visually connecting discrete points; three satisfy the
+  per-scenario RMSE limit, and the best of those reduces energy by 11.27% versus traditional while
+  also reducing mean RMSE.
 
 ## Verification
 
 - Created an isolated Python 3.11 virtual environment and installed MetaDrive 0.4.3 plus the
   development dependencies.
 - `ruff check .`: passed.
-- `pytest`: 49 tests passed.
+- `pytest`: 52 tests passed.
 - `codesign-smoke --core-only`: passed; nominal mass 1575.0 kg, net energy 2.675 Wh, and
   recovered energy 1.396 Wh for the deterministic four-point core exercise.
 - `codesign-smoke --metadrive`: passed; MetaDrive initialized headlessly, downloaded and loaded
@@ -159,8 +164,13 @@ unseen traffic, curvature, friction, seed, and parameter distributions.
 
 ## Next steps
 
-1. Refine the ratio grid around the top-speed-feasible boundary solution $g=11.5,s_m=0.75$.
-2. Expand the dataset with unseen seeds, traffic, curvature, tire friction, and stochastic parameters.
-3. Replace the illustrative efficiency and thermal parameters with traceable motor data.
-4. Add a rendered, physically controlled MetaDrive traffic-actor safety scenario.
+1. Generate dense traditional and trained-hardware frontiers under identical shared and
+   scenario-adaptive controller protocols.
+2. Refine the ratio/motor grid around $g=11.5,s_m=0.75$ only after the matched protocol confirms
+   the current dominance result.
+3. Expand the dataset with multiple seeds, traffic, curvature, tire friction, and uncertainty.
+4. Replace illustrative efficiency and thermal parameters with traceable motor data.
 5. Export selected designs for CARLA validation on Windows.
+
+The acceptance gates and exact deliverables are specified in the MkDocs
+`Start Here → Prioritized next steps` page.

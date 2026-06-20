@@ -365,6 +365,12 @@ decreases from 0.35378 to 0.35284 m/s while energy decreases from 311.15 to 279.
 The minimum-energy frontier endpoint remains the training-selected $(11.5,0.75)$ design at
 274.79 Wh/km.
 
+A follow-up dense controller study fixes the trained hardware $(11.5,0.75)$ and evaluates 40 shared
+MPC weight pairs on all four training scenarios (160 runs). Seven sampled controllers are
+nondominated and are shown as unconnected markers. Three satisfy the original RMSE limit in every
+scenario; shared weights $(-1.5,-0.5)$ achieve 0.33446 m/s mean RMSE, 0.39783 m/s maximum RMSE, and
+276.09 Wh/km, an 11.27% energy reduction from the traditional reference.
+
 ## 12. Recoverable milestone — held-out matched-RMSE dominance
 
 Milestone date: 2026-06-20.
@@ -393,3 +399,19 @@ Recovery command:
 
 Evidence is documented in `docs/optimization/matched-rmse-test.md` and regenerates under
 `artifacts/matched_rmse_test/`.
+
+## 13. Recoverable milestone — structured knowledge and next boundary
+
+Milestone date: 2026-06-21.
+
+MkDocs now begins with three reader-oriented pages:
+
+1. the end-to-end project logic from hardware and controller variables through fair comparison;
+2. an evidence ladder separating measured results, supported claims, and unsupported claims;
+3. a prioritized roadmap with explicit acceptance gates.
+
+The immediate next experiment is a matched-protocol dual-frontier comparison. Traditional
+$(10.5,0.60)$ and trained $(11.5,0.75)$ hardware must receive identical dense controller grids
+under both shared-controller and scenario-adaptive policies on training and held-out scenarios.
+Only after that comparison confirms the current energy advantage should the hardware grid be
+refined near $(11.5,0.75)$.

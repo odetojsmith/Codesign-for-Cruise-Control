@@ -38,13 +38,17 @@ evidence. “Planned” rows are specifications rather than completed claims.
 | Integrated co-design | `co_design.py` | `test_co_design.py` | Quick Pareto frontier |
 | Alternating method | `alternating_search` | cached quick run | Iteration records in JSON |
 | Optimization resumes safely | `EvaluationCache` | `test_optimization.py` | 54-entry SQLite database |
+| Train/test hardware isolation | `generality_dataset.py` | `test_generality_dataset.py` | Versioned split and held-out report |
+| Matched-RMSE comparison | `matched_rmse_test.py` | `test_matched_rmse_test.py` | Three held-out dominance results |
+| Dense trained-hardware controller frontier | `trained_hardware_controller_sweep.py` | `test_trained_hardware_controller_sweep.py` | 40-point CSV and discrete Pareto plot |
 
 ## Planned requirements
 
 | Requirement | Planned implementation | Acceptance evidence |
 |---|---|---|
 | Physical traffic-actor safe following | Rendered controlled lead vehicle | Minimum-gap plots and stress tests |
-| Robustness | Payload/drag/friction/grade scenarios | Seed and uncertainty distributions |
+| Matched-protocol dual frontiers | Same controller grids for both frozen hardware designs | Training/test frontiers and fixed-RMSE table |
+| Robustness | Payload/drag/friction/grade/traffic scenarios | Multi-seed uncertainty distributions |
 | Simulator transfer | CARLA adapter | MetaDrive–CARLA comparison table |
 
 ## Evidence interpretation
@@ -52,8 +56,9 @@ evidence. “Planned” rows are specifications rather than completed claims.
 !!! success "What current evidence supports"
     Software-level actuator delivery, modeled power-flow consistency, deterministic scenario
     execution, PID/MPC closed-loop operation, conventional sizing, cached optimization execution,
-    lane containment, and metric generation.
+    lane containment, conventional sizing, mountain co-design, current train/test energy gains,
+    and matched-RMSE sampled dominance.
 
 !!! warning "What current evidence does not support"
-    Production EV energy accuracy, optimal-control superiority, co-design superiority, or CARLA
-    transfer validity. Those claims require the planned data and experiments.
+    Production EV energy accuracy, global optimality, broad-scene generality, or CARLA transfer
+    validity. Those claims require the planned data and experiments.

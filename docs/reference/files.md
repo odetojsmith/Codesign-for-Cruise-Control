@@ -58,6 +58,7 @@ where to look for verification.
 | [`mountain_shuttle.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/mountain_shuttle.py) / `codesign-mountain-shuttle --quick` | Repeated ±10% hill mission and separate-versus-co-design comparison |
 | [`generality_dataset.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/generality_dataset.py) / `codesign-generality-dataset --quick` | Train/test scenario manifest, adaptive-controller hardware selection, and held-out evaluation |
 | [`matched_rmse_test.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/matched_rmse_test.py) / `codesign-matched-rmse-test` | Traditional-first controller tuning and strict held-out RMSE/energy dominance test |
+| `trained_hardware_controller_sweep.py` / `codesign-trained-controller-sweep` | Forty-controller shared-policy sweep and discrete Pareto extraction for trained hardware |
 
 ## Tests
 
@@ -80,6 +81,7 @@ where to look for verification.
 | `test_mountain_shuttle.py` | Repeated mission definition, battery power caps, and thermal derating |
 | `test_generality_dataset.py` | Split isolation, profile consistency, per-scenario control tuning, and training-only hardware selection |
 | `test_matched_rmse_test.py` | Energy selection under a scenario-specific comparison RMSE bound |
+| `test_trained_hardware_controller_sweep.py` | Dense-grid uniqueness and nondominated controller filtering |
 
 ## Documentation
 
@@ -87,6 +89,7 @@ The `docs/` hierarchy mirrors the implementation:
 
 ```text
 docs/
+├── guide/           end-to-end logic, conclusions, and prioritized roadmap
 ├── architecture/    system ownership and data flow
 ├── models/          hardware and EV energy equations
 ├── simulation/      MetaDrive integration

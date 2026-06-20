@@ -84,10 +84,11 @@ $$
 $$
 
 Thus, the comparison does not penalize one hardware design by forcing it to use another design's
-controller. The orange line contains hardware points for which no other sampled design has both
-lower mean RMSE and lower mean energy.
+controller. Orange diamonds identify hardware points for which no other sampled design has both
+lower mean RMSE and lower mean energy. The diamonds are deliberately **not connected**: these are
+discrete sampled designs, not a continuous interpolated curve.
 
-![Training hardware/controller Pareto frontier](../assets/validation/generality_training_hardware_pareto.png)
+![Training hardware/controller Pareto samples](../assets/validation/generality_training_hardware_pareto.png)
 
 | Point | Mean RMSE | Mean energy | Relation to traditional |
 |---|---:|---:|---|
@@ -100,6 +101,41 @@ ratio as the traditional design, but its larger motor changes the efficiency, re
 and saturation behavior enough to reduce energy by 31.48 Wh/km while also slightly improving
 tracking. Therefore the traditional point is strictly inside the dominated region, not merely at a
 different preference along the frontier.
+
+### Dense controller frontier for the trained hardware
+
+The hardware plot above gives only two nondominated hardware samples because the hardware grid is
+small. To reveal the controller tradeoff more clearly, a second experiment fixes the trained
+hardware at $g=11.5,s_m=0.75$ and evaluates 40 shared MPC weight pairs:
+
+$$
+\log_{10}\lambda_E\in\{-2,-1.5,-1,-0.5,0,0.25,0.5,0.75\},
+$$
+
+$$
+\log_{10}\lambda_{\Delta u}\in\{-2,-1.5,-1,-0.5,0\}.
+$$
+
+Every weight pair runs on all four training scenarios, producing 160 closed-loop evaluations. A
+point is rejected only for completion, station, progress, thermal, or MPC-fallback failure. RMSE is
+not used to hide points because it is one of the plotted objectives. Orange diamonds are the seven
+nondominated sampled controllers; they are not joined by a line.
+
+![Dense trained-hardware controller Pareto samples](../assets/validation/trained_hardware_controller_pareto.png)
+
+Three of the seven frontier controllers also satisfy RMSE ≤0.4 m/s in **every** training scenario.
+The best-energy one is
+$(\log_{10}\lambda_E,\log_{10}\lambda_{\Delta u})=(-1.5,-0.5)$:
+
+| Design and controller | Mean RMSE | Maximum scenario RMSE | Mean energy |
+|---|---:|---:|---:|
+| Traditional hardware with independently tuned MPC | 0.35378 m/s | ≤0.4 m/s | 311.15 Wh/km |
+| Trained hardware, shared weights $(-1.5,-0.5)$ | **0.33446 m/s** | **0.39783 m/s** | **276.09 Wh/km** |
+
+Even though the trained hardware uses one shared weight pair across all four scenarios while the
+traditional reference was allowed independent scenario tuning, this controller lowers mean RMSE
+and lowers mean energy by **11.27%**. Points farther right show additional energy savings only by
+accepting larger tracking error, which is the tradeoff the denser frontier is intended to expose.
 
 Controller adaptation was active rather than nominally allowed. For the selected hardware,
 $\log_{10}\lambda_E$ was −0.5, 0.5, −1.5, and 0.5 across the four training scenarios; the selected
@@ -131,6 +167,7 @@ less energy. The other two cases also remain below the common threshold and use 
 
 ```bash
 codesign-generality-dataset --quick
+codesign-trained-controller-sweep
 ```
 
 `artifacts/generality_dataset/` contains:
@@ -142,6 +179,9 @@ codesign-generality-dataset --quick
 - held-out test selections;
 - a resumable JSON evaluation cache;
 - plots and a machine-readable report.
+
+The dense controller sweep additionally writes its 40-point summary, 160 raw scenario evaluations,
+plot, and JSON report under `artifacts/trained_hardware_controller_sweep/`.
 
 Implementation: [`generality_dataset.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/generality_dataset.py).
 
