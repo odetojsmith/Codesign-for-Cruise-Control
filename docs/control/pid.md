@@ -1,7 +1,7 @@
 # PID controllers
 
 The PID controllers are validation tools. They prove that the environment, actuator, energy, lane
-observations, and trajectory logger form a usable closed loop before MPC is designed.
+observations, and trajectory logger form a baseline closed loop for MPC comparison.
 
 ## Longitudinal speed PID
 
@@ -40,10 +40,10 @@ Keep the vehicle near the current reference-lane center while following curves. 
 PID loops:
 
 $$
-\delta=\delta_{\mathrm{lateral}}+\delta_{\mathrm{heading}},
+\delta=\tan^{-1}(L\kappa)+\delta_{\mathrm{lateral}}+\delta_{\mathrm{heading}},
 $$
 
-then clips $\delta$ to $[-1,1]$.
+then applies a 0.4-command/s rate limit and clips $\delta$ to $[-1,1]$.
 
 ### Parameters
 
@@ -66,8 +66,10 @@ flowchart LR
 
     L["Lateral error"] --> LAT["Lateral PID"]
     H["Heading error"] --> HPID["Heading PID"]
-    LAT --> SUM["Sum and clip"]
+    K["Road curvature"] --> FF["Steering feedforward"]
+    LAT --> SUM["Sum, rate limit, and clip"]
     HPID --> SUM
+    FF --> SUM
     SUM --> STEER["Steering [-1,1]"]
 ```
 
@@ -78,8 +80,8 @@ departure from contaminating longitudinal experiments.
 
 | Scenario | Initial offset | Distance | Lateral RMSE | Maximum error | Completed |
 |---|---:|---:|---:|---:|---|
-| Curved track | 1.0 m | 318.19 m | 0.377 m | 1.000 m | Yes |
-| Urban stop-go | 0.5 m | 321.96 m | 0.162 m | 0.597 m | Yes |
+| Curved track | 1.0 m | 320.70 m | 0.307 m | 1.000 m | Yes |
+| Urban stop-go | 0.5 m | 322.84 m | 0.120 m | 0.500 m | Yes |
 
 Both remain within the ±1.75 m lane boundaries.
 
@@ -91,8 +93,7 @@ Both remain within the ±1.75 m lane boundaries.
 
 ## Limitations
 
-- PID is not the final optimized longitudinal controller.
+- Longitudinal PID is a baseline rather than the optimized controller.
 - Speed overshoot and jerk are intentionally visible in validation plots.
 - The lateral controller does not perform path planning or obstacle avoidance.
-- Lead-vehicle safety is deferred to the MPC formulation.
-
+- Lead-vehicle safety is handled by the MPC, not the lateral PID.

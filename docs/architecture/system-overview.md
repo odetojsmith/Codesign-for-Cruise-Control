@@ -63,6 +63,6 @@ flowchart TB
 
 - Version one optimizes longitudinal behavior; lateral PID is fixed and used for lane keeping.
 - The motor efficiency map is illustrative until replaced by traceable measured or published data.
-- Battery voltage sag, thermal behavior, degradation, and motor thermal limits are out of scope.
+- Battery voltage sag and degradation remain out of scope. Optional battery charge/discharge caps
+  and a lumped motor thermal/torque-derating model are implemented for demanding duty cycles.
 - MetaDrive is the optimization backend; CARLA is a later transfer-validation backend.
-

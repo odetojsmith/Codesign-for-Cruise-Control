@@ -12,6 +12,7 @@ import numpy as np
 
 from .metadrive_env import LaneState, LeadVehicleState
 from .powertrain import EnergyState, PowertrainStep
+from .speed_planner import build_speed_plan
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +37,26 @@ class SpeedProfile:
         return float(np.interp(time_s, self.time_s, self.speed_mps))
 
 
+@dataclass(frozen=True, slots=True)
+class RoadGradeProfile:
+    name: str
+    distance_m: tuple[float, ...]
+    grade_fraction: tuple[float, ...]
+
+    def __post_init__(self) -> None:
+        if len(self.distance_m) != len(self.grade_fraction) or len(self.distance_m) < 2:
+            raise ValueError("grade distance and values must have equal length >= 2")
+        if self.distance_m[0] != 0 or any(
+            b <= a for a, b in zip(self.distance_m, self.distance_m[1:])
+        ):
+            raise ValueError("grade distance must start at zero and increase strictly")
+        if any(abs(value) > 0.25 for value in self.grade_fraction):
+            raise ValueError("grade fractions must remain within +/-25%")
+
+    def grade_at(self, distance_m: float) -> float:
+        return float(np.interp(distance_m, self.distance_m, self.grade_fraction))
+
+
 URBAN_PROFILE = SpeedProfile(
     name="urban_stop_go",
     time_s=(0.0, 4.0, 12.0, 18.0, 24.0, 28.0, 36.0, 44.0),
@@ -48,10 +69,28 @@ HIGHWAY_PROFILE = SpeedProfile(
     speed_mps=(16.0, 24.0, 24.0, 30.0, 30.0, 22.0),
 )
 
+HIGHWAY_TRAINING_PROFILE = SpeedProfile(
+    name="highway_training",
+    time_s=(0.0, 8.0, 11.0),
+    speed_mps=(0.0, 16.0, 20.0),
+)
+
 CENTERLINE_PROFILE = SpeedProfile(
     name="curved_centerline",
     time_s=(0.0, 5.0, 30.0),
     speed_mps=(0.0, 12.0, 12.0),
+)
+
+MIXED_GRADE_SPEED_PROFILE = SpeedProfile(
+    name="mixed_grade",
+    time_s=(0.0, 3.0, 8.0, 12.0, 16.0),
+    speed_mps=(0.0, 8.0, 14.0, 14.0, 8.0),
+)
+
+MIXED_GRADE_PROFILE = RoadGradeProfile(
+    name="mixed_grade_route",
+    distance_m=(0.0, 25.0, 55.0, 85.0, 120.0, 180.0),
+    grade_fraction=(0.0, 0.06, -0.04, 0.03, -0.06, 0.0),
 )
 
 
@@ -63,6 +102,9 @@ class ControlObservation:
     previous_force_n: float
     lead_gap_m: float | None = None
     lead_speed_mps: float | None = None
+    reference_preview_mps: tuple[float, ...] = ()
+    curvature_preview_per_m: tuple[float, ...] = ()
+    grade_preview_fraction: tuple[float, ...] = ()
 
 
 class LongitudinalController(Protocol):
@@ -116,6 +158,10 @@ class LongitudinalEnvironment(Protocol):
 
     def lane_state(self) -> LaneState: ...
 
+    def road_curvature_preview(self, distances_m: tuple[float, ...]) -> tuple[float, ...]: ...
+
+    def road_grade_preview(self, distances_m: tuple[float, ...]) -> tuple[float, ...]: ...
+
 
 @dataclass(frozen=True, slots=True)
 class TrajectoryPoint:
@@ -138,6 +184,13 @@ class TrajectoryPoint:
     motor_mechanical_power_w: float
     motor_efficiency: float
     actuator_speed_mps: float
+    regenerative_force_n: float
+    friction_brake_force_n: float
+    road_grade_fraction: float
+    grade_resistance_force_n: float
+    motor_temperature_c: float
+    thermal_derating_factor: float
+    battery_power_limited: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -197,6 +250,7 @@ def run_speed_profile(
     controller: LongitudinalController,
     lateral_controller: LateralController | None = None,
     step_callback: Callable[[int, LongitudinalEnvironment], None] | None = None,
+    preview_steps: int = 20,
 ) -> EpisodeResult:
     """Run one deterministic profile and collect controller-independent system metrics."""
 
@@ -216,13 +270,22 @@ def run_speed_profile(
     for index in range(int(round(profile.duration_s / dt)) + 1):
         time_s = index * dt
         lead = env.lead_vehicle_state()
+        mission_preview = tuple(
+            profile.reference_at(time_s + preview_index * dt)
+            for preview_index in range(preview_steps + 1)
+        )
+        speed_plan = build_speed_plan(mission_preview, env.road_curvature_preview, dt)
+        grade_preview = env.road_grade_preview(speed_plan.distances_m)
         observation = ControlObservation(
             time_s=time_s,
             speed_mps=env.speed_mps,
-            reference_speed_mps=profile.reference_at(time_s),
+            reference_speed_mps=speed_plan.reference_mps[0],
             previous_force_n=previous_force,
             lead_gap_m=None if lead is None else lead.gap_m,
             lead_speed_mps=None if lead is None else lead.speed_mps,
+            reference_preview_mps=speed_plan.reference_mps,
+            curvature_preview_per_m=speed_plan.curvature_per_m,
+            grade_preview_fraction=grade_preview,
         )
         requested_force = controller.command(observation)
         lane = env.lane_state()
@@ -263,6 +326,16 @@ def run_speed_profile(
                 ),
                 motor_efficiency=powertrain.motor_efficiency,
                 actuator_speed_mps=powertrain.vehicle_speed_mps,
+                regenerative_force_n=powertrain.regenerative_wheel_force_n,
+                friction_brake_force_n=powertrain.friction_brake_force_n,
+                road_grade_fraction=grade_preview[0],
+                grade_resistance_force_n=(
+                    powertrain.applied_wheel_force_n
+                    - float(getattr(env, "last_net_chassis_force_n", powertrain.applied_wheel_force_n))
+                ),
+                motor_temperature_c=powertrain.motor_temperature_c,
+                thermal_derating_factor=powertrain.thermal_derating_factor,
+                battery_power_limited=powertrain.battery_power_limited,
             )
         )
         if step_callback is not None:

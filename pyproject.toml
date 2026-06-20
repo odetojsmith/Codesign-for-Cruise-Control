@@ -41,6 +41,18 @@ all = [
 
 [project.scripts]
 codesign-calibrate = "codesign.calibration:main"
+codesign-steering-validate = "codesign.steering_validation:main"
+codesign-mpc-validate = "codesign.mpc_cli:main"
+codesign-mpc-sweep = "codesign.mpc_sweep:main"
+codesign-braking-validate = "codesign.braking_validation:main"
+codesign-trajectory-animation = "codesign.trajectory_animation:main"
+codesign-scenario-gifs = "codesign.scenario_gifs:main"
+codesign-scenario-comparison-gifs = "codesign.scenario_comparison_gifs:main"
+codesign-size-hardware = "codesign.hardware_sizing:main"
+codesign-separate-opt = "codesign.separate_optimization:main"
+codesign-optimize = "codesign.co_design:main"
+codesign-hardware-sensitivity = "codesign.hardware_sensitivity:main"
+codesign-mountain-shuttle = "codesign.mountain_shuttle:main"
 codesign-scenario = "codesign.scenario_cli:main"
 codesign-smoke = "codesign.smoke:main"
 codesign-validate = "codesign.validation_cli:main"

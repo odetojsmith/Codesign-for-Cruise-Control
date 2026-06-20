@@ -93,7 +93,7 @@ For regeneration,
 P_{batt}=T_m\omega_m\eta_{regen}\eta_{inv}+P_{aux},
 \]
 
-where negative battery power represents recovered energy. Integrate battery power over time and report gross traction energy, recovered energy, net Wh, and Wh/km. Use inverter efficiency 0.97, auxiliary load 500 W, and a 60 kWh battery. State of charge will be tracked but battery voltage and thermal dynamics are out of scope for version one.
+where negative battery power represents recovered energy. Integrate battery power over time and report gross traction energy, recovered energy, net Wh, and Wh/km. Use inverter efficiency 0.97, auxiliary load 500 W, and a 60 kWh battery. State of charge is tracked. Battery voltage sag and degradation remain out of scope, but optional charge/discharge power limits and a lumped motor thermal/torque-derating state are implemented for demanding missions.
 
 ### 3.3 Controller design
 
@@ -174,6 +174,12 @@ Optimize over three deterministic training scenarios:
 - Highway speed changes, 60–100 km/h.
 - Mixed route with road grades from -6% to +6%.
 
+Use a fourth, deliberately hardware-sensitive autonomous mountain-shuttle mission as the decisive
+co-design demonstration. It repeats four 25 s station-to-station cycles over ±10% grades, with a
+750 m progress requirement, station-stop accuracy, battery charge/discharge limits, and motor
+thermal monitoring. Energy is minimized only among designs satisfying identical tracking,
+progress, stopping, safety, and actuator constraints.
+
 Validate on unseen mixed traffic, emergency lead-vehicle braking, payload variation of ±10%, drag variation of ±10%, and road-friction variation. Use fixed scenario seeds shared by every method.
 
 Generate:
@@ -233,7 +239,12 @@ Integration tests will verify:
 - Separate and co-design methods use identical scenarios and evaluation functions.
 - A selected experiment can be replayed from its saved configuration.
 
-The demonstration succeeds when at least one practically relevant RMSE bound shows lower validation Wh/km for co-design without additional safety or comfort violations. Results must remain qualitatively consistent across unseen scenarios and at least five scenario-seed sets. If these conditions are not met, report the non-dominating Pareto fronts without forcing the intended conclusion.
+The initial demonstration succeeds when at least one practically relevant RMSE bound shows lower
+Wh/km for co-design without additional safety or comfort violations. The mountain-shuttle quick
+grid has met this software-in-the-loop milestone with a 12.58% energy reduction at matched RMSE.
+The stronger validation claim still requires qualitatively consistent results across unseen
+scenarios and at least five scenario-seed sets. If those conditions are not met, report the
+non-dominating Pareto fronts without forcing the intended conclusion.
 
 ## 8. Implementation order
 
@@ -251,6 +262,51 @@ The demonstration succeeds when at least one practically relevant RMSE bound sho
 ## 9. Explicit boundaries
 
 - Version one optimizes longitudinal behavior only; lateral control is fixed.
-- Battery voltage sag, temperature, degradation, and motor thermal dynamics are excluded.
+- Battery voltage sag and degradation are excluded. Optional battery power limits and a lumped
+  motor thermal/derating model are included; their parameters remain illustrative until calibrated.
 - MetaDrive is the authoritative optimization environment; CARLA is a transfer/validation check.
 - CARLA disagreement will be reported as a simulator-transfer result, not hidden by retuning hardware.
+
+## 10. Recoverable milestone — autonomous mountain shuttle
+
+Milestone date: 2026-06-20.
+
+Implemented:
+
+- Battery discharge and charge power caps in the hardware-dependent actuator.
+- Regenerative/friction braking redistribution when electrical charging power saturates.
+- Resettable lumped motor temperature, loss integration, cooling, and torque derating.
+- A 100 s, four-cycle autonomous shuttle mission with repeated +10% climbs, −10% descents, and
+  station stops.
+- Hard feasibility checks for RMSE, terminal progress, station position/speed, motor temperature,
+  episode completion, and MPC fallback.
+- A reproducible 60-point hardware/controller quick search and MkDocs evidence page.
+
+Measured quick-grid result:
+
+| Method | Hardware | RMSE | Net energy | Friction brake energy |
+|---|---|---:|---:|---:|
+| Conventional sizing, then MPC tuning | $g=10.5,s_m=0.60$ | 0.4182 m/s | 241.40 Wh | 60.21 Wh |
+| Integrated co-design | $g=11.5,s_m=0.75$ | 0.4177 m/s | 211.03 Wh | 28.02 Wh |
+
+The co-designed system saves 12.58% battery energy while completing effectively the same 750 m
+mission with the same tracking quality. Recovered battery energy increases from 181.02 to
+212.99 Wh. Across sampled hardware, minimum feasible energy spans 314.7–211.0 Wh. Thermal derating
+does not activate in the 100 s quick run, so the result is driven primarily by final-drive/motor
+effects on regenerative capacity and motor operating points rather than by an imposed thermal
+failure.
+
+Recovery commands:
+
+```bash
+python -m venv .venv
+.venv/bin/pip install -e '.[all]'
+.venv/bin/pytest
+.venv/bin/python -m codesign.mountain_shuttle --quick
+.venv/bin/mkdocs build --strict
+```
+
+Primary recovery documents are `PLAN.md`, `project_status.md`, and the MkDocs page
+`docs/optimization/mountain-shuttle.md`. Machine-readable experiment outputs are regenerated under
+`artifacts/mountain_shuttle/`; documentation copies of the selected plots are version controlled
+under `docs/assets/validation/`.

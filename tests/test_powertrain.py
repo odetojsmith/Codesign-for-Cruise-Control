@@ -41,6 +41,19 @@ def test_overspeed_prevents_traction() -> None:
     assert step.applied_wheel_force_n == pytest.approx(0.0)
 
 
+def test_braking_blends_regeneration_and_friction_without_counting_friction_as_energy() -> None:
+    powertrain = EVPowertrain(HardwareDesign(9.0, 1.0))
+    regenerative_limit = abs(powertrain.evaluate(-1e9, 10.0).regenerative_wheel_force_n)
+    requested = -(regenerative_limit + 1000.0)
+    step = powertrain.evaluate(requested, 10.0)
+    assert step.applied_wheel_force_n == pytest.approx(requested)
+    assert step.regenerative_wheel_force_n == pytest.approx(-regenerative_limit)
+    assert step.friction_brake_force_n == pytest.approx(-1000.0)
+    assert step.traction_power_w == pytest.approx(
+        step.motor_torque_nm * step.motor_speed_rad_s * step.motor_efficiency * 0.97
+    )
+
+
 def test_regeneration_reduces_net_energy() -> None:
     powertrain = EVPowertrain(HardwareDesign(9.0, 1.0))
     energy = EnergyState()

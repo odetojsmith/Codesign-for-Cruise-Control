@@ -17,6 +17,33 @@ pytest
 codesign-smoke --core-only
 ```
 
+Run the implemented longitudinal MPC against PID and curved-road scenarios:
+
+```bash
+codesign-mpc-validate
+```
+
+Sample MPC weights and validate braking with:
+
+```bash
+codesign-mpc-sweep
+codesign-braking-validate
+codesign-trajectory-animation
+codesign-scenario-gifs
+```
+
+Run conventional hardware sizing and the resumable quick co-design experiment with:
+
+```bash
+codesign-size-hardware
+codesign-separate-opt --quick
+codesign-optimize --quick
+codesign-hardware-sensitivity
+```
+
+The full `codesign-optimize` grid is intentionally much larger. Evaluations are cached in SQLite,
+so rerunning the command resumes from completed hardware/controller pairs.
+
 Install the MetaDrive backend with:
 
 ```bash
@@ -44,14 +71,16 @@ python -m codesign.scenario_cli --profile urban
 The generated calibration, metrics, and trajectory files are written under `artifacts/` and are
 intentionally ignored by Git.
 
-Generate the complete actuator/energy/PID validation dashboard and top-down animation with:
+Generate the complete longitudinal-force, open-loop steering, energy, PID, and visual validation
+evidence with:
 
 ```bash
 python -m codesign.validation_cli
 ```
 
-The command fails if force calibration exceeds 0.1% error, either driving episode terminates
-early, the vehicle leaves its lane, or the independent driveline/energy balances do not close.
+The command fails if force calibration exceeds 0.1% error, steering handoff or response checks fail,
+either driving episode terminates early, the vehicle leaves its lane, or the independent
+driveline/energy balances do not close.
 
 ## Current state
 

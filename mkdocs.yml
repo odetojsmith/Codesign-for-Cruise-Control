@@ -50,14 +50,20 @@ nav:
   - Controllers:
       - Controller interfaces: control/interfaces.md
       - PID controllers: control/pid.md
-      - MPC design boundary: control/mpc.md
+      - Lateral–longitudinal coordination: control/coordination.md
+      - Longitudinal MPC: control/mpc.md
   - Experiments:
       - Scenarios and metrics: experiments/scenarios.md
       - Reproducibility: experiments/reproducibility.md
   - Optimization:
+      - MPC weight sampling: optimization/mpc-tuning.md
+      - Hardware sensitivity: optimization/hardware-sensitivity.md
+      - Mountain shuttle: optimization/mountain-shuttle.md
       - Separate design: optimization/separate-design.md
       - Integrated co-design: optimization/codesign.md
   - Validation:
+      - Actuator validation methods: validation/actuator-validation.md
+      - Braking validation: validation/braking.md
       - Evidence and results: validation/evidence.md
   - Reference:
       - Configuration: reference/configuration.md

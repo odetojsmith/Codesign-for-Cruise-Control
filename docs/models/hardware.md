@@ -86,6 +86,21 @@ Regenerative torque is additionally multiplied by the configured regeneration fr
 0.60. Traction is set to zero beyond maximum motor speed. Negative force is suppressed near zero
 vehicle speed to prevent unintended reverse motion.
 
+## Road-load model for sizing
+
+The backward-facing conventional baseline adds rolling, aerodynamic, and grade resistance:
+
+$$
+F_{road}=mgC_{rr}\cos\alpha
++\frac{1}{2}\rho C_d A v^2
++mg\sin\alpha,
+\qquad \alpha=\tan^{-1}(q),
+$$
+
+where $q$ is signed road grade. Required wheel force is $ma+F_{road}$. The full hardware grid is
+then filtered by 120 km/h operation, 0–100 km/h in 10 s, 20% gradeability at 30 km/h, and exact
+drive-cycle feasibility before energy ranking.
+
 ## Implementation and tests
 
 - Implementation: [`config.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/config.py) and [`powertrain.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/powertrain.py)
@@ -94,4 +109,3 @@ vehicle speed to prevent unintended reverse motion.
 
 Tests verify ratio effects, motor scaling, power-limited torque, overspeed behavior, regeneration,
 and reverse prevention.
-

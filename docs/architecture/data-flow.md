@@ -16,14 +16,14 @@ sequenceDiagram
     participant Log as Metrics / trajectory
 
     Scenario->>Env: read speed, lane, lead vehicle
-    Scenario->>Long: speed reference and state
+    Scenario->>Long: speed, curvature, and grade previews
     Long-->>Scenario: requested wheel force [N]
     Scenario->>Lat: lateral and heading errors
     Lat-->>Scenario: normalized steering [-1, 1]
     Scenario->>Env: (steering, requested force)
     Env->>PT: enforce motor and drivetrain limits
     PT-->>Env: applied force and battery power
-    Env->>MD: normalized signed engine force and steering
+    Env->>MD: applied force minus grade resistance, and steering
     MD-->>Env: next vehicle state
     Env-->>Scenario: state, termination, powertrain information
     Scenario->>Log: trajectory point and cumulative metrics
@@ -43,6 +43,7 @@ sequenceDiagram
 | Net energy | Wh | Energy integrator | Episode metrics |
 | Lane error | m | MetaDrive adapter | Lateral controller and metrics |
 | Lead gap | m | MetaDrive adapter | Future safety controller/MPC |
+| Road grade | fraction | Grade profile | MPC and MetaDrive adapter |
 
 ## Failure and saturation path
 
@@ -50,8 +51,8 @@ sequenceDiagram
 2. `EVPowertrain.evaluate` converts that request to motor torque and speed.
 3. Torque, power, speed, and regeneration limits clip the request.
 4. `PowertrainStep.saturated` records whether clipping occurred.
-5. MetaDrive receives only the feasible signed force.
-6. Metrics report the saturation fraction; future MPC will include the same limits explicitly.
+5. MetaDrive receives feasible wheel force minus the signed grade-resistance disturbance.
+6. Metrics report saturation and grade force; the MPC uses the same force limits and grade preview.
 
 ## Determinism
 
@@ -60,4 +61,3 @@ sequenceDiagram
 - Reference profiles are immutable time/speed tables.
 - Every trajectory records both requested and applied force.
 - Repeated candidates can be cached by scenario, hardware, controller, and seed.
-

@@ -18,8 +18,15 @@ pytest
 python -m codesign.smoke --core-only
 python -m codesign.smoke --metadrive
 python -m codesign.calibration
+python -m codesign.steering_validation
 python -m codesign.scenario_cli --profile urban
 python -m codesign.validation_cli
+python -m codesign.mpc_cli
+python -m codesign.mpc_sweep
+python -m codesign.braking_validation
+codesign-size-hardware
+codesign-separate-opt --quick
+codesign-optimize --quick
 ```
 
 ## Determinism contract
@@ -31,6 +38,7 @@ python -m codesign.validation_cli
 - Reference profiles are immutable.
 - Requested and applied actions are both logged.
 - Validation acceptance thresholds are encoded in the command.
+- Steering validation uses an 8 m/s constant-speed condition and fixed open-loop commands.
 
 ## Generated artifacts
 
@@ -38,18 +46,18 @@ Generated results live under `artifacts/` by default and are ignored by Git. Thi
 machine-specific outputs with source. The documentation contains selected, reviewed validation
 assets for human inspection.
 
-## Future optimization record
+## Optimization record
 
-Every optimization evaluation will persist:
+Every closed-loop optimization evaluation persists in a WAL-enabled SQLite database:
 
 - hardware candidate;
 - controller candidate;
 - scenario and seed;
-- dependency versions;
 - feasibility and constraint violations;
 - aggregate metrics;
-- trajectory location;
 - cache key and completion status.
 
-This allows interruption-safe resumption and exact reconstruction of Pareto points.
-
+The cache key hashes hardware, controller, vehicle/motor/battery configuration, scenario profiles,
+seed, control interval, and constraint thresholds. Selected designs can be replayed later to write
+full trajectories; keeping every trajectory inside the optimization cache would make the database
+unnecessarily large.

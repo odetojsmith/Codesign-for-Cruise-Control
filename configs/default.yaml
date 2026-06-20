@@ -6,6 +6,11 @@ vehicle:
   base_mass_kg: 1500.0
   wheel_radius_m: 0.31
   final_drive_efficiency: 0.97
+  maximum_friction_braking_acceleration_mps2: 6.0
+  rolling_resistance_coefficient: 0.012
+  drag_coefficient: 0.29
+  frontal_area_m2: 2.3
+  air_density_kg_per_m3: 1.225
 
 motor:
   base_peak_torque_nm: 300.0
@@ -18,9 +23,20 @@ battery:
   capacity_kwh: 60.0
   inverter_efficiency: 0.97
   auxiliary_power_w: 500.0
+  maximum_discharge_power_kw: null
+  maximum_charge_power_kw: null
+
+thermal:
+  enabled: false
+  ambient_temperature_c: 25.0
+  initial_temperature_c: 25.0
+  base_thermal_capacity_j_per_k: 35000.0
+  base_thermal_conductance_w_per_k: 120.0
+  derating_start_temperature_c: 90.0
+  maximum_temperature_c: 120.0
+  minimum_torque_fraction: 0.25
 
 simulation:
   control_interval_s: 0.2
   seed: 7
   use_render: false
-

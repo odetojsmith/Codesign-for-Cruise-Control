@@ -26,6 +26,10 @@ from .scenarios import (  # noqa: E402
     EpisodeResult,
     run_speed_profile,
 )
+from .steering_validation import (  # noqa: E402
+    SteeringValidationResult,
+    run_steering_validation,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,6 +207,85 @@ def _plot_dashboard(
     plt.close(fig)
 
 
+def _plot_steering_validation(result: SteeringValidationResult, output: Path) -> None:
+    fig, axes = plt.subplots(2, 2, figsize=(12, 9), constrained_layout=True)
+
+    requested = [sample.requested_command for sample in result.sweep]
+    reported = [sample.reported_command for sample in result.sweep]
+    axes[0, 0].plot(requested, reported, "o-", label="MetaDrive reported")
+    axes[0, 0].plot([-0.22, 0.22], [-0.22, 0.22], "k--", label="Ideal handoff")
+    axes[0, 0].set(
+        title="Steering command handoff",
+        xlabel="Requested normalized command",
+        ylabel="Reported normalized command",
+    )
+    axes[0, 0].legend()
+    axes[0, 0].grid(alpha=0.3)
+
+    axes[0, 1].plot(
+        requested,
+        [sample.measured_curvature_per_m for sample in result.sweep],
+        "o-",
+        label="Measured from yaw rate / speed",
+    )
+    axes[0, 1].plot(
+        requested,
+        [sample.bicycle_curvature_per_m for sample in result.sweep],
+        "s--",
+        label="Kinematic bicycle prediction",
+    )
+    axes[0, 1].set(
+        title="Constant-steer curvature at 8 m/s",
+        xlabel="Normalized steering command",
+        ylabel="Curvature [1/m]",
+    )
+    axes[0, 1].legend()
+    axes[0, 1].grid(alpha=0.3)
+
+    magnitudes = sorted({abs(sample.requested_command) for sample in result.sweep})
+    positive = {
+        sample.requested_command: abs(sample.measured_curvature_per_m)
+        for sample in result.sweep
+        if sample.requested_command > 0
+    }
+    negative = {
+        abs(sample.requested_command): abs(sample.measured_curvature_per_m)
+        for sample in result.sweep
+        if sample.requested_command < 0
+    }
+    axes[1, 0].plot(magnitudes, [positive[value] for value in magnitudes], "o-", label="Right")
+    axes[1, 0].plot(magnitudes, [negative[value] for value in magnitudes], "s--", label="Left")
+    axes[1, 0].set(
+        title="Left/right symmetry",
+        xlabel="Absolute normalized command",
+        ylabel="Absolute curvature [1/m]",
+    )
+    axes[1, 0].legend()
+    axes[1, 0].grid(alpha=0.3)
+
+    step_time = [point.time_s for point in result.step.points]
+    axis = axes[1, 1]
+    axis.plot(step_time, [point.yaw_rate_rad_s for point in result.step.points], label="Yaw rate")
+    axis.axhline(result.step.steady_yaw_rate_rad_s, color="k", linestyle="--", label="Steady")
+    axis.axvline(0.0, color="0.5", linewidth=1)
+    axis.set(title="0.1-command step response", xlabel="Time after step [s]", ylabel="Yaw rate [rad/s]")
+    axis.grid(alpha=0.3)
+    command_axis = axis.twinx()
+    command_axis.step(
+        step_time,
+        [point.requested_command for point in result.step.points],
+        color="tab:orange",
+        where="post",
+        label="Command",
+    )
+    command_axis.set_ylabel("Normalized command", color="tab:orange")
+    axis.legend(loc="lower right")
+
+    fig.suptitle("Open-loop steering validation", fontsize=16)
+    fig.savefig(output, dpi=170)
+    plt.close(fig)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, default=Path("configs/default.yaml"))
@@ -212,12 +295,14 @@ def main() -> None:
     config = ProjectConfig.from_yaml(args.config)
 
     calibration = run_actuator_calibration(config)
+    steering = run_steering_validation(config)
     centerline, frames = _run_episode(config, CENTERLINE_PROFILE, "SCSCSC", 1.0, True)
     urban, _ = _run_episode(config, URBAN_PROFILE, "SSSSSSSSSSSS", 0.5, False)
     centerline.write_csv(args.output_dir / "centerline_trajectory.csv")
     urban.write_csv(args.output_dir / "urban_trajectory.csv")
     _save_gif(frames, args.output_dir / "centerline_topdown.gif")
     _plot_dashboard(calibration, centerline, urban, args.output_dir / "validation_dashboard.png")
+    _plot_steering_validation(steering, args.output_dir / "steering_validation.png")
 
     actuator_error = max(abs(sample.force_gain - 1.0) for sample in calibration)
     centerline_energy = _energy_consistency(centerline, config)
@@ -234,11 +319,25 @@ def main() -> None:
             urban_energy.maximum_driveline_residual_w,
         )
         < 1e-6,
+        "steering_command_handoff_exact": steering.maximum_command_handoff_error < 1e-12,
+        "steering_response_signs_consistent": steering.signs_are_consistent,
+        "steering_curvature_monotonic": steering.curvature_is_monotonic,
+        "steering_left_right_asymmetry_below_2_percent": (
+            steering.maximum_left_right_curvature_asymmetry < 0.02
+        ),
+        "steering_bicycle_curvature_error_below_10_percent": (
+            steering.maximum_bicycle_curvature_relative_error < 0.10
+        ),
+        "steering_step_delay_below_one_control_interval": (
+            steering.step.response_delay_s <= config.control_interval_s
+        ),
+        "steering_step_rise_time_below_0_6_seconds": steering.step.rise_time_s <= 0.6,
     }
     report = {
         "overall_passed": all(checks.values()),
         "checks": checks,
         "maximum_actuator_relative_error": actuator_error,
+        "steering": asdict(steering),
         "centerline": asdict(centerline.metrics),
         "urban": asdict(urban.metrics),
         "centerline_energy_consistency": asdict(centerline_energy),
@@ -254,6 +353,9 @@ def main() -> None:
     (args.output_dir / "actuator_calibration.json").write_text(
         json.dumps([asdict(sample) for sample in calibration], indent=2) + "\n",
         encoding="utf-8",
+    )
+    (args.output_dir / "steering_validation.json").write_text(
+        json.dumps(asdict(steering), indent=2) + "\n", encoding="utf-8"
     )
     print(json.dumps(report, indent=2))
     if not report["overall_passed"]:

@@ -1,8 +1,8 @@
 # Integrated co-design
 
-!!! note "Planned"
-    Search and optimization are specified but not implemented. The simulator and evaluation
-    foundation they require are implemented.
+!!! success "Implemented with quick-grid evidence"
+    Nested and alternating searches share a persistent SQLite evaluator. A reduced six-hardware,
+    nine-controller experiment is complete; the full 97-feasible-hardware search remains to run.
 
 ## Objective
 
@@ -68,3 +68,24 @@ must be compared with the nested hardware-grid result.
 Co-design is better only where its energy–RMSE Pareto frontier dominates the separate-design
 frontier. If the frontiers cross, report the operating regions where each method is preferable.
 
+## Initial quick-grid evidence
+
+![Quick separate-versus-co-design Pareto comparison](../assets/validation/separate_vs_codesign_pareto.png)
+
+| RMSE bound | Separate energy | Co-design energy | Quick-grid interpretation |
+|---:|---:|---:|---|
+| 0.1 m/s | Infeasible | Infeasible | Bound is below sampled capability |
+| 0.2 m/s | Infeasible | Infeasible | Bound is below sampled capability |
+| 0.4 m/s | 162.69 Wh | 162.69 Wh | Same conventional point selected |
+| 0.8 m/s | 162.69 Wh | 162.69 Wh | Same conventional point selected |
+| 1.5 m/s | 128.58 Wh | 128.55 Wh | 0.023% preliminary saving |
+
+This reduced search does **not** yet establish co-design superiority. Its purpose is to verify the
+complete comparison pipeline, caching, feasibility handling, and alternating convergence. The full
+hardware/controller grid and unseen-seed validation are required before making the project claim.
+
+```bash
+codesign-optimize --quick
+# Full cached search:
+codesign-optimize
+```

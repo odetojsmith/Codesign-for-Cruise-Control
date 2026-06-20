@@ -1,7 +1,9 @@
 # Conventional separate design
 
-!!! note "Planned"
-    This page specifies the baseline workflow; the optimization code is not implemented yet.
+!!! success "Implemented"
+    Backward-facing hardware sizing, persistent evaluation caching, and frozen-hardware MPC tuning
+    are implemented. The current evidence uses the quick controller grid; the full grid remains to
+    be run.
 
 ## Purpose
 
@@ -49,7 +51,7 @@ Evaluate separate design and co-design with identical scenarios, seeds, constrai
 The claim is only supported where co-design uses less energy at the same tracking bound without
 additional safety or comfort violations.
 
-## Planned outputs
+## Outputs
 
 - selected conventional hardware;
 - hardware-feasibility map;
@@ -58,3 +60,26 @@ additional safety or comfort violations.
 - separate-design Pareto points;
 - validation trajectories.
 
+## Current quick result
+
+The 117-point hardware grid has 97 feasible candidates. The conventional rule selects
+$g=10.5$ and $s_m=0.6$:
+
+| Quantity | Result |
+|---|---:|
+| Motor mass | 45.0 kg |
+| Backward-cycle energy | 208.18 Wh/km |
+| 0–100 km/h time | 9.44 s |
+| 120 km/h requirement | Pass |
+| 20% grade at 30 km/h | Pass |
+
+![Conventional hardware sizing map](../assets/validation/hardware_sizing_map.png)
+
+The quick closed-loop controller sweep finds no feasible point at 0.1 or 0.2 m/s aggregate RMSE.
+At the 0.4 and 0.8 m/s bounds, the selected controller is $(0,0)$ with 0.268 m/s RMSE and
+162.69 Wh across the shared urban, highway, and grade training episodes.
+
+```bash
+codesign-size-hardware
+codesign-separate-opt --quick
+```

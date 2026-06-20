@@ -6,8 +6,9 @@ source file, test, and validation evidence.
 
 !!! info "Current boundary"
     The MetaDrive simulation, hardware-dependent actuator, EV energy accounting, deterministic
-    scenarios, PID validation controllers, metrics, and visual validation are implemented. The
-    next design decision is the longitudinal MPC formulation.
+    scenarios, grade-aware dynamics, conventional hardware sizing, coordinated lateral control,
+    longitudinal MPC, persistent optimization caching, and quick nested/alternating co-design are
+    implemented. The full-resolution search and unseen-seed validation remain.
 
 ## Project question
 
@@ -38,7 +39,7 @@ flowchart TD
     C --> C3["Battery energy"]
     E --> E1["Longitudinal PID"]
     E --> E2["Lateral PID"]
-    E --> E3["MPC — pending"]
+    E --> E3["Longitudinal MPC"]
     D --> F["Scenarios and metrics"]
     F --> G["Validation evidence"]
     G --> H["Separate optimization"]
@@ -52,8 +53,11 @@ flowchart TD
 | How the complete system fits together | [System overview](architecture/system-overview.md) |
 | What information moves through one simulation step | [Data flow](architecture/data-flow.md) |
 | How final drive and motor size affect the car | [Hardware design](models/hardware.md) |
+| How hardware changes closed-loop tracking and energy | [Hardware sensitivity](optimization/hardware-sensitivity.md) |
 | How Wh and regeneration are calculated | [EV energy model](models/energy.md) |
 | How longitudinal and lateral PID differ | [PID controllers](control/pid.md) |
+| How steering and speed planning coordinate | [Lateral–longitudinal coordination](control/coordination.md) |
+| How the MPC is formulated | [Longitudinal MPC](control/mpc.md) |
 | Why the actuator and energy layers are credible | [Validation evidence](validation/evidence.md) |
 | Which source file implements a feature | [File inventory](reference/files.md) |
 | Which test supports a requirement | [Traceability matrix](reference/traceability.md) |
@@ -68,9 +72,10 @@ flowchart TD
 | MetaDrive environment | Implemented | Headless and visual scenarios |
 | Longitudinal speed PID | Implemented for validation | Urban and curved-track runs |
 | Lateral centerline PID | Implemented for validation | Top-down animation and lane metrics |
-| Longitudinal MPC | Pending design | [Decision boundary](control/mpc.md) |
-| Separate optimization | Planned | [Method specification](optimization/separate-design.md) |
-| Integrated co-design | Planned | [Method specification](optimization/codesign.md) |
+| Curvature-aware speed planner | Implemented | Planner unit tests and curved-route run |
+| Longitudinal MPC | Implemented; sampled tuning | [Formulation and evidence](control/mpc.md) |
+| Separate optimization | Implemented | [Method and initial evidence](optimization/separate-design.md) |
+| Integrated co-design | Implemented; quick grid complete | [Method and initial evidence](optimization/codesign.md) |
 | CARLA validation | Planned for Windows | Export adapter not yet implemented |
 
 ## Reproduce the current evidence
@@ -78,11 +83,13 @@ flowchart TD
 ```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[simulation,dev]'
+python -m pip install -e '.[simulation,optimization,visualization,dev]'
 pytest
 python -m codesign.validation_cli
+python -m codesign.mpc_cli
+codesign-size-hardware
+codesign-optimize --quick
 ```
 
-The validation command fails if actuator calibration, lane completion, or energy-balance checks
-do not satisfy their acceptance limits.
-
+The validation commands fail if actuator, steering, lane, energy, MPC tracking, comfort, or solver
+checks do not satisfy their acceptance limits.

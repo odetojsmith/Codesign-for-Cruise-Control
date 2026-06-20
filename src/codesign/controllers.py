@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from math import atan, radians
 
 from .metadrive_env import LaneState
 from .scenarios import ControlObservation
@@ -86,8 +87,12 @@ class CenterlinePIDController:
     heading_kp: float = 1.70
     heading_ki: float = 0.05
     heading_kd: float = 0.70
+    wheelbase_m: float = 2.46894
+    maximum_steering_deg: float = 40.0
+    maximum_steering_rate_per_s: float = 0.4
     _lateral_pid: PID = field(init=False)
     _heading_pid: PID = field(init=False)
+    _previous_steering: float = field(init=False, default=0.0)
 
     def __post_init__(self) -> None:
         self._lateral_pid = PID(
@@ -114,11 +119,22 @@ class CenterlinePIDController:
     def reset(self) -> None:
         self._lateral_pid.reset()
         self._heading_pid.reset()
+        self._previous_steering = 0.0
 
     def command(self, lane: LaneState) -> float:
         # MetaDrive's positive steering action corrects positive lane-lateral and lane-heading
         # errors. Its built-in controller hides this sign inside a negating PID implementation;
         # this project uses a conventional positive-gain PID and therefore passes errors directly.
-        steering = self._heading_pid.update(lane.heading_error_rad)
+        feedforward = atan(self.wheelbase_m * lane.curvature_per_m) / radians(
+            self.maximum_steering_deg
+        )
+        steering = feedforward + self._heading_pid.update(lane.heading_error_rad)
         steering += self._lateral_pid.update(lane.lateral_error_m)
-        return max(-1.0, min(1.0, steering))
+        steering = max(-1.0, min(1.0, steering))
+        maximum_change = self.maximum_steering_rate_per_s * self.dt_s
+        steering = max(
+            self._previous_steering - maximum_change,
+            min(self._previous_steering + maximum_change, steering),
+        )
+        self._previous_steering = steering
+        return steering

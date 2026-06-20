@@ -17,6 +17,8 @@ and return requests; the actuator layer remains authoritative for feasibility.
 | `previous_force_n` | N | Previous requested force |
 | `lead_gap_m` | m or absent | Nearest in-lane vehicle gap |
 | `lead_speed_mps` | m/s or absent | Lead-vehicle speed |
+| `reference_preview_mps` | m/s | Curvature-aware horizon reference |
+| `curvature_preview_per_m` | 1/m | Road-curvature horizon |
 
 ## Protocols
 
@@ -35,7 +37,7 @@ $[-1,1]$.
 
 ## Why the interface matters
 
-- PID and future MPC use the same scenario runner.
+- PID and MPC use the same scenario runner and planned reference.
 - Final metrics are independent of controller internals.
 - Hardware saturation is applied after the controller request.
 - MetaDrive and future CARLA adapters can consume the same controller outputs.
@@ -53,5 +55,5 @@ minimum gap, saturation fraction, lateral RMSE, maximum lateral error, and compl
 ## Source
 
 - Protocol and observations: [`scenarios.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/scenarios.py)
-- Current controllers: [`controllers.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/controllers.py)
-
+- PID controllers: [`controllers.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/controllers.py)
+- MPC controller: [`mpc.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/mpc.py)

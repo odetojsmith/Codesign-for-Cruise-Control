@@ -4,7 +4,12 @@ import pytest
 
 from codesign.metadrive_env import LaneState, LeadVehicleState
 from codesign.powertrain import EnergyState, PowertrainStep
-from codesign.scenarios import ProportionalForceController, SpeedProfile, run_speed_profile
+from codesign.scenarios import (
+    ProportionalForceController,
+    RoadGradeProfile,
+    SpeedProfile,
+    run_speed_profile,
+)
 
 
 @dataclass
@@ -26,6 +31,12 @@ class FakeEnvironment:
 
     def lane_state(self):
         return LaneState(0.2, 0.01, 3.5)
+
+    def road_curvature_preview(self, distances_m):
+        return tuple(0.0 for _ in distances_m)
+
+    def road_grade_preview(self, distances_m):
+        return tuple(0.0 for _ in distances_m)
 
     def step(self, action):
         _, force = action
@@ -58,6 +69,13 @@ def test_profile_interpolates_and_validates() -> None:
     assert profile.reference_at(0.5) == pytest.approx(5.0)
     with pytest.raises(ValueError):
         SpeedProfile("bad", (0.0, 0.0), (0.0, 1.0))
+
+
+def test_grade_profile_interpolates_by_route_distance() -> None:
+    profile = RoadGradeProfile("grade", (0.0, 100.0, 200.0), (0.0, 0.06, -0.04))
+    assert profile.grade_at(50.0) == pytest.approx(0.03)
+    with pytest.raises(ValueError):
+        RoadGradeProfile("bad", (0.0, 100.0), (0.0, 0.30))
 
 
 def test_speed_profile_runner_records_independent_metrics(tmp_path) -> None:

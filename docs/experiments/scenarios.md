@@ -17,6 +17,10 @@ Profiles are immutable piecewise-linear tables evaluated by interpolation.
 - Speed range: 16–30 m/s
 - Exercises the motor power-limited and high-speed operating regions
 
+The optimization evaluator uses a compact, dynamically feasible launch from 0 to 20 m/s because
+MetaDrive's procedural training route ends near 130 m at high speed. The separate hardware check
+independently enforces sustained operation at 120 km/h.
+
 ### Curved centerline
 
 - Duration: 30 s
@@ -25,16 +29,24 @@ Profiles are immutable piecewise-linear tables evaluated by interpolation.
 - Starts with a 1 m lateral offset
 - Produces top-down visual evidence
 
+### Mixed grade
+
+- Duration: 16 s and approximately 168 m
+- Grade range: −6% to +6% as a function of route distance
+- Speed range: 0–14 m/s
+- MPC preview includes the grade disturbance
+- MetaDrive receives net chassis force while battery energy uses full wheel force
+
 ## Training and future validation matrix
 
 | Scenario | Current status | Intended use |
 |---|---|---|
 | Urban stop-go | Implemented | Energy and tracking |
-| Highway changes | Implemented profile | High-speed hardware limits |
+| Highway changes | Compact training profile implemented | Closed-loop high-speed launch |
 | Curved centerline | Implemented | Lateral-control isolation |
 | Deterministic traffic | Lead detection verified | Future safety/MPC |
-| Emergency lead braking | Planned | Safety stress test |
-| Grade ±6% | Planned | Hardware/energy coupling |
+| Emergency lead braking | Virtual deterministic lead implemented | Safety stress test |
+| Grade ±6% | Implemented | Hardware/energy coupling |
 | Payload ±10% | Planned | Robustness |
 | Drag ±10% | Planned | Robustness |
 | Friction variation | Planned | Transfer robustness |
@@ -69,4 +81,3 @@ Each run can write:
 - Profiles and runner: [`scenarios.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/scenarios.py)
 - Scenario CLI: [`scenario_cli.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/scenario_cli.py)
 - Tests: [`test_scenarios.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/tests/test_scenarios.py)
-
