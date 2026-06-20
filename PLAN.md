@@ -324,23 +324,23 @@ Quick protocol:
 
 - 15 proposed hardware candidates: five final-drive ratios by three motor scales; three candidates
   are rejected before training because they violate the shared 120 km/h motor-speed requirement.
-- Three MPC weight candidates per hardware/scenario pair.
-- 144 training evaluations and 18 held-out evaluations.
+- Fifteen MPC candidates per hardware/scenario pair: five energy weights by three slew weights.
+- 720 training evaluations and 90 held-out evaluations.
 - Hardware objective: minimum equally weighted mean training Wh/km.
-- Hard per-scenario limits: RMSE ≤0.8 m/s, progress ≥98.5%, station accuracy, temperature,
+- Hard per-scenario limits: RMSE ≤0.4 m/s, progress ≥98.5%, station accuracy, temperature,
   completion, and zero MPC fallback.
 
 Measured result:
 
 | Stage | Conventional $g=10.5,s_m=0.60$ | Training-selected $g=11.5,s_m=0.75$ | Reduction |
 |---|---:|---:|---:|
-| Mean training energy | 314.44 Wh/km | 277.07 Wh/km | 11.88% |
-| Mean held-out energy | 347.94 Wh/km | 314.32 Wh/km | 9.66% |
+| Mean training energy | 311.15 Wh/km | 274.79 Wh/km | 11.68% |
+| Mean held-out energy | 344.25 Wh/km | 312.50 Wh/km | 9.22% |
 
 The selected hardware uses less energy on every held-out scenario. All selected and conventional
-test runs satisfy the 0.8 m/s RMSE threshold and mission constraints. Controller adaptation is
-observable: selected hardware uses $\log_{10}\lambda_E=-1$ for one training scenario and $0.5$ for
-the other three; held-out controllers are independently selected after hardware freezing.
+test runs satisfy the 0.4 m/s RMSE threshold and mission constraints. Controller adaptation is
+observable: selected hardware uses $\log_{10}\lambda_E\in\{-1.5,-0.5,0.5\}$ across training
+scenarios; held-out controllers are independently selected after hardware freezing.
 
 Recovery command:
 

@@ -73,7 +73,7 @@ validation, sourced motor data, and CARLA transfer validation are next.
   missions varying grade, speed, cycles, payload, drag, temperature, battery limits, and seed.
 - Implemented leakage-free hardware selection on training data with independent MPC re-optimization
   for every scenario before and after hardware is frozen.
-- Completed 144 training and 18 held-out controller evaluations with a resumable JSON cache after
+- Completed 720 training and 90 held-out controller evaluations with a resumable JSON cache after
   rejecting three hardware candidates that violated the shared 120 km/h motor-speed requirement.
 
 ## Verification
@@ -81,7 +81,7 @@ validation, sourced motor data, and CARLA transfer validation are next.
 - Created an isolated Python 3.11 virtual environment and installed MetaDrive 0.4.3 plus the
   development dependencies.
 - `ruff check .`: passed.
-- `pytest`: 46 tests passed.
+- `pytest`: 47 tests passed.
 - `codesign-smoke --core-only`: passed; nominal mass 1575.0 kg, net energy 2.675 Wh, and
   recovered energy 1.396 Wh for the deterministic four-point core exercise.
 - `codesign-smoke --metadrive`: passed; MetaDrive initialized headlessly, downloaded and loaded
@@ -123,11 +123,12 @@ validation, sourced motor data, and CARLA transfer validation are next.
 - The mountain co-design reduced friction-brake dissipation from 60.21 to 28.02 Wh and increased
   recovered battery energy from 181.02 to 212.99 Wh. Across the hardware grid, best feasible energy
   ranged from 314.7 to 211.0 Wh.
-- Generalization training selected $g=11.5,s_m=0.75$ using only four training scenarios. Mean
-  training energy was 277.07 Wh/km versus 314.44 Wh/km for conventional $g=10.5,s_m=0.6$.
+- Corrected generalization training uses a 15-point two-parameter MPC grid and RMSE ≤0.4 m/s.
+  Training selected $g=11.5,s_m=0.75$ using only four training scenarios; mean energy was
+  274.79 Wh/km versus 311.15 Wh/km for conventional $g=10.5,s_m=0.6$.
 - With hardware frozen and MPC re-tuned independently on every held-out scenario, selected hardware
-  reduced mean test energy from 347.94 to 314.32 Wh/km (9.66%), won all three test cases, and kept
-  all RMSE values below the 0.8 m/s threshold without fallback or mission violations.
+  reduced mean test energy from 344.25 to 312.50 Wh/km (9.22%), won all three test cases, and kept
+  all RMSE values below the 0.4 m/s threshold without fallback or mission violations.
 
 ## Important limitations
 

@@ -1,7 +1,7 @@
 # Train/test generalization dataset
 
 !!! success "Held-out improvement confirmed"
-    Hardware selected using four training scenarios reduced mean energy by 9.66% on three unseen
+    Hardware selected using four training scenarios reduced mean energy by 9.22% on three unseen
     test scenarios. The hardware was frozen before test evaluation, while MPC weights were
     re-optimized independently for every scenario.
 
@@ -45,7 +45,7 @@ stored in the manifest before optimization, but are not evaluated during hardwar
 
 For every scenario, controller tuning minimizes Wh/km subject to:
 
-- speed RMSE ≤0.8 m/s;
+- speed RMSE ≤0.4 m/s;
 - terminal progress ≥98.5%;
 - station distance error ≤12 m;
 - station speed ≤1.5 m/s;
@@ -57,19 +57,22 @@ gives every training scenario equal influence despite different route lengths.
 
 ## Training result
 
-The quick grid proposed 15 hardware designs, rejected three that violated the shared 120 km/h
-motor-speed requirement, and ran 144 training evaluations: 12 hardware designs by three controller
-settings by four scenarios.
+The corrected quick grid proposed 15 hardware designs, rejected three that violated the shared
+120 km/h motor-speed requirement, and ran 720 training evaluations: 12 hardware designs by 15
+controller settings by four scenarios. The controller grid samples
+$\log_{10}\lambda_E\in\{-1.5,-1,-0.5,0,0.5\}$ and
+$\log_{10}\lambda_{\Delta u}\in\{-1.5,-1,-0.5\}$.
 
 | Hardware | Mean training energy | Maximum training RMSE |
 |---|---:|---:|
-| Conventional $g=10.5,s_m=0.60$ | 314.44 Wh/km | 0.4842 m/s |
-| Training-selected $g=11.5,s_m=0.75$ | **277.07 Wh/km** | 0.4843 m/s |
+| Conventional $g=10.5,s_m=0.60$ | 311.15 Wh/km | 0.3962 m/s |
+| Training-selected $g=11.5,s_m=0.75$ | **274.79 Wh/km** | 0.3978 m/s |
 
 ![Training hardware map](../assets/validation/generality_training_hardware_map.png)
 
-Controller adaptation was active rather than nominally allowed: the selected hardware used
-$\log_{10}\lambda_E=-1$ on Alpine commuter and $0.5$ on the other three training scenarios.
+Controller adaptation was active rather than nominally allowed. For the selected hardware,
+$\log_{10}\lambda_E$ was −0.5, 0.5, −1.5, and 0.5 across the four training scenarios; the selected
+slew weight was −0.5. Each choice is the minimum-energy point satisfying RMSE ≤0.4 m/s.
 
 ## Held-out test result
 
@@ -78,20 +81,20 @@ search on every test scenario.
 
 | Held-out scenario | Traditional Wh/km | Selected Wh/km | Traditional RMSE | Selected RMSE |
 |---|---:|---:|---:|---:|
-| Unseen steep | 409.84 | **373.43** | 0.3270 | 0.4057 |
-| Heavy descent | 350.58 | **321.66** | 0.3764 | 0.3772 |
-| Long fast shift | 283.39 | **247.86** | 0.4498 | 0.4515 |
-| **Mean** | **347.94** | **314.32** | — | — |
+| Unseen steep | 405.63 | **372.26** | 0.3351 | 0.3563 |
+| Heavy descent | 345.21 | **318.62** | 0.3811 | 0.3816 |
+| Long fast shift | 281.91 | **246.61** | 0.3727 | 0.3986 |
+| **Mean** | **344.25** | **312.50** | — | — |
 
-The training-selected hardware reduces mean held-out energy by **9.66%** and wins on every test
-scenario. All six test hardware/scenario combinations satisfy the 0.8 m/s tracking threshold and
+The training-selected hardware reduces mean held-out energy by **9.22%** and wins on every test
+scenario. All six test hardware/scenario combinations satisfy the 0.4 m/s tracking threshold and
 mission constraints.
 
 ![Held-out generalization results](../assets/validation/generality_test_results.png)
 
 The unseen-steep case illustrates why the final comparison uses a constraint rather than a weighted
-score: selected hardware accepts a modest RMSE increase while remaining comfortably feasible and
-uses 8.88% less energy. The other two cases have nearly identical RMSE and lower energy.
+score: selected hardware accepts a modest RMSE increase while remaining feasible and uses 8.23%
+less energy. The other two cases also remain below the common threshold and use less energy.
 
 ## Reproduce and inspect
 

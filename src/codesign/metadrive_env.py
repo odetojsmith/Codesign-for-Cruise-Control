@@ -84,6 +84,7 @@ class MetaDriveEVEnv:
         )
         env_config: dict[str, Any] = {
             "use_render": self.use_render,
+            "log_level": 50,
             "num_scenarios": 1,
             "start_seed": self.seed,
             "map": self.map_sequence,

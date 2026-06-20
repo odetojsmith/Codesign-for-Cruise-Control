@@ -10,7 +10,14 @@ from codesign.generality_dataset import (
 )
 
 
-def _result(scenario: str, ratio: float, scale: float, energy: float, controller: float):
+def _result(
+    scenario: str,
+    ratio: float,
+    scale: float,
+    energy: float,
+    controller: float,
+    feasible: bool = True,
+):
     return ScenarioEvaluation(
         scenario=scenario,
         split="train",
@@ -29,8 +36,8 @@ def _result(scenario: str, ratio: float, scale: float, energy: float, controller
         friction_brake_wh=10.0,
         recovered_battery_wh=20.0,
         fallback_count=0,
-        feasible=True,
-        violations=(),
+        feasible=feasible,
+        violations=() if feasible else ("tracking_rmse",),
     )
 
 
@@ -53,6 +60,18 @@ def test_controller_is_selected_independently_per_scenario() -> None:
     assert first is not None and second is not None
     assert first.log10_lambda_energy == 0.5
     assert second.log10_lambda_energy == -1.0
+
+
+def test_controller_selection_minimizes_energy_only_inside_rmse_feasible_set() -> None:
+    selected = select_controller(
+        [
+            _result("a", 10.0, 0.75, 190.0, -1.0),
+            _result("a", 10.0, 0.75, 170.0, 0.5),
+            _result("a", 10.0, 0.75, 140.0, 1.0, feasible=False),
+        ]
+    )
+    assert selected is not None
+    assert selected.net_battery_wh == pytest.approx(170.0)
 
 
 def test_training_hardware_requires_all_training_scenarios() -> None:

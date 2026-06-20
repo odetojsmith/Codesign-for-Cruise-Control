@@ -44,7 +44,7 @@ class ScenarioDefinition:
     initial_motor_temperature_c: float = 55.0
     discharge_power_kw: float = 90.0
     charge_power_kw: float = 45.0
-    rmse_limit_mps: float = 0.80
+    rmse_limit_mps: float = 0.40
 
     def __post_init__(self) -> None:
         if self.split not in {"train", "test"}:
@@ -490,18 +490,18 @@ def run_generality_experiment(
     if quick:
         ratios = (8.5, 10.0, 10.5, 11.5, 12.0)
         scales = (0.6, 0.75, 0.9)
-        controllers = (
-            ControllerDesign(-1.0, -1.0),
-            ControllerDesign(0.5, -1.0),
-            ControllerDesign(1.5, -0.5),
+        controllers = tuple(
+            ControllerDesign(energy, slew)
+            for energy in (-1.5, -1.0, -0.5, 0.0, 0.5)
+            for slew in (-1.5, -1.0, -0.5)
         )
     else:
         ratios = tuple(np.arange(7.0, 12.01, 0.5))
         scales = tuple(np.arange(0.6, 1.051, 0.075))
         controllers = tuple(
             ControllerDesign(energy, slew)
-            for energy in (-1.5, -0.5, 0.5, 1.5)
-            for slew in (-1.5, -0.5, 0.5)
+            for energy in (-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0)
+            for slew in (-2.0, -1.5, -1.0, -0.5, 0.0)
         )
     sampled_hardware = tuple(
         HardwareDesign(ratio, scale) for ratio in ratios for scale in scales
@@ -608,6 +608,9 @@ def run_generality_experiment(
             "hardware_selected_using": "training scenarios only",
             "controller_policy": "re-optimized independently for every scenario after hardware is fixed",
             "objective": "minimum mean Wh/km subject to each scenario's tracking and mission constraints",
+            "rmse_threshold_mps": 0.40,
+            "controller_candidate_count": len(controllers),
+            "controller_candidates": [asdict(controller) for controller in controllers],
         },
         "training_scenarios": [scenario.name for scenario in training],
         "test_scenarios": [scenario.name for scenario in testing],
