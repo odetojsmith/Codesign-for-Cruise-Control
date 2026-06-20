@@ -359,6 +359,12 @@ manifests, evaluations, selections, cache, and report regenerate under
 `artifacts/generality_dataset/`. The selected ratio lies at the shared top-speed-feasible boundary,
 so the next experiment should refine that neighborhood without relaxing motor-speed requirements.
 
+The training evidence also includes an RMSE–energy Pareto frontier after independent per-scenario
+MPC tuning. Traditional hardware $(10.5,0.60)$ is strictly dominated by $(10.5,0.90)$: mean RMSE
+decreases from 0.35378 to 0.35284 m/s while energy decreases from 311.15 to 279.67 Wh/km (10.12%).
+The minimum-energy frontier endpoint remains the training-selected $(11.5,0.75)$ design at
+274.79 Wh/km.
+
 ## 12. Recoverable milestone — held-out matched-RMSE dominance
 
 Milestone date: 2026-06-20.

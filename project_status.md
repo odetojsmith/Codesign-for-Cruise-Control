@@ -81,6 +81,9 @@ validation, sourced motor data, and CARLA transfer validation are next.
 - Expanded MkDocs with the complete conventional hardware-sizing calculation: 117-point grid,
   top-speed/acceleration/grade/cycle checks, backward power-flow equations, 0.5% mass tie-break,
   intermediate force margins, and the numerical path selecting $g=10.5,s_m=0.6$.
+- Added a training hardware RMSE–energy Pareto frontier after independent MPC tuning. The
+  traditional point is strictly dominated by $g=10.5,s_m=0.9$, which lowers mean RMSE from
+  0.35378 to 0.35284 m/s and lowers mean energy by 10.12%.
 
 ## Verification
 

@@ -70,14 +70,45 @@ $\log_{10}\lambda_{\Delta u}\in\{-1.5,-1,-0.5\}$.
 
 ![Training hardware map](../assets/validation/generality_training_hardware_map.png)
 
+### RMSE–energy Pareto frontier after controller tuning
+
+The map above shows only energy. The following plot retains both control objectives. Each circle is
+one hardware design **after its MPC has been tuned independently on each training scenario**. For
+each hardware/scenario pair, the plotted data use the minimum-energy controller satisfying RMSE
+≤0.4 m/s and all mission constraints. The coordinates are then the equally weighted means over the
+four training scenarios:
+
+$$
+\bar e(h)=\frac{1}{4}\sum_{i=1}^{4}\operatorname{RMSE}_i(h,\theta_i^*),\qquad
+\bar E(h)=\frac{1}{4}\sum_{i=1}^{4}E_i(h,\theta_i^*).
+$$
+
+Thus, the comparison does not penalize one hardware design by forcing it to use another design's
+controller. The orange line contains hardware points for which no other sampled design has both
+lower mean RMSE and lower mean energy.
+
+![Training hardware/controller Pareto frontier](../assets/validation/generality_training_hardware_pareto.png)
+
+| Point | Mean RMSE | Mean energy | Relation to traditional |
+|---|---:|---:|---|
+| Traditional $g=10.5,s_m=0.60$ | 0.35378 m/s | 311.15 Wh/km | Dominated |
+| Frontier $g=10.5,s_m=0.90$ | **0.35284 m/s** | **279.67 Wh/km** | Lower RMSE and **10.12% less energy** |
+| Frontier $g=11.5,s_m=0.75$ | 0.37107 m/s | **274.79 Wh/km** | Lowest-energy feasible hardware |
+
+The strongest like-for-like observation is the first frontier point. It has the same final-drive
+ratio as the traditional design, but its larger motor changes the efficiency, regenerative-braking,
+and saturation behavior enough to reduce energy by 31.48 Wh/km while also slightly improving
+tracking. Therefore the traditional point is strictly inside the dominated region, not merely at a
+different preference along the frontier.
+
 Controller adaptation was active rather than nominally allowed. For the selected hardware,
 $\log_{10}\lambda_E$ was −0.5, 0.5, −1.5, and 0.5 across the four training scenarios; the selected
 slew weight was −0.5. Each choice is the minimum-energy point satisfying RMSE ≤0.4 m/s.
 
 ## Held-out test result
 
-Both hardware designs were frozen. For fairness, each received an independent three-point MPC
-search on every test scenario.
+Both hardware designs were frozen. For fairness, each received an independent 15-point MPC search
+on every test scenario.
 
 | Held-out scenario | Traditional Wh/km | Selected Wh/km | Traditional RMSE | Selected RMSE |
 |---|---:|---:|---:|---:|

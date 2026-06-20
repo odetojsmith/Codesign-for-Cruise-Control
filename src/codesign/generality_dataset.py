@@ -394,6 +394,11 @@ def select_training_hardware(
                     if feasible
                     else float("inf")
                 ),
+                "mean_rmse_mps": (
+                    float(np.mean([result.rmse_mps for result in valid]))
+                    if feasible
+                    else float("inf")
+                ),
                 "maximum_rmse_mps": (
                     max(result.rmse_mps for result in valid) if valid else float("inf")
                 ),
@@ -404,6 +409,30 @@ def select_training_hardware(
         raise RuntimeError("no hardware design is feasible on every training scenario")
     best = min(feasible_summaries, key=lambda item: float(item["mean_wh_per_km"]))
     return HardwareDesign(float(best["final_drive_ratio"]), float(best["motor_scale"])), summaries
+
+
+def training_hardware_pareto_flags(summaries: list[dict[str, object]]) -> list[bool]:
+    """Mark feasible hardware summaries nondominated in mean RMSE and energy."""
+    flags: list[bool] = []
+    for candidate in summaries:
+        if not bool(candidate["feasible"]):
+            flags.append(False)
+            continue
+        rmse = float(candidate["mean_rmse_mps"])
+        energy = float(candidate["mean_wh_per_km"])
+        dominated = any(
+            bool(other["feasible"])
+            and other is not candidate
+            and float(other["mean_rmse_mps"]) <= rmse
+            and float(other["mean_wh_per_km"]) <= energy
+            and (
+                float(other["mean_rmse_mps"]) < rmse
+                or float(other["mean_wh_per_km"]) < energy
+            )
+            for other in summaries
+        )
+        flags.append(not dominated)
+    return flags
 
 
 def _write_csv(rows: list[dict[str, object]], path: Path) -> None:
@@ -453,6 +482,83 @@ def _plot_training_map(
     axis.legend()
     fig.colorbar(image, ax=axis, label="Mean Wh/km")
     fig.savefig(output, dpi=180)
+    plt.close(fig)
+
+
+def _plot_training_pareto(
+    summaries: list[dict[str, object]], traditional: HardwareDesign, output: Path
+) -> None:
+    feasible = [row for row in summaries if bool(row["feasible"])]
+    frontier = sorted(
+        [row for row, flag in zip(summaries, training_hardware_pareto_flags(summaries)) if flag],
+        key=lambda row: float(row["mean_rmse_mps"]),
+    )
+    traditional_row = next(
+        row for row in feasible
+        if float(row["final_drive_ratio"]) == traditional.final_drive_ratio
+        and float(row["motor_scale"]) == traditional.motor_scale
+    )
+    fig, axis = plt.subplots(figsize=(10.5, 6.8), constrained_layout=True)
+    scatter = axis.scatter(
+        [float(row["mean_rmse_mps"]) for row in feasible],
+        [float(row["mean_wh_per_km"]) for row in feasible],
+        c=[float(row["motor_scale"]) for row in feasible], cmap="viridis", s=75,
+        alpha=0.72, edgecolor="white", linewidth=0.8,
+        label="Hardware with its tuned MPC", zorder=2,
+    )
+    axis.plot(
+        [float(row["mean_rmse_mps"]) for row in frontier],
+        [float(row["mean_wh_per_km"]) for row in frontier],
+        "-o", color="tab:orange", linewidth=2.6, markersize=8,
+        label="Hardware/controller Pareto frontier", zorder=3,
+    )
+    for row in frontier:
+        axis.annotate(
+            f"g={float(row['final_drive_ratio']):g}, $s_m$={float(row['motor_scale']):.2f}",
+            xy=(float(row["mean_rmse_mps"]), float(row["mean_wh_per_km"])),
+            xytext=(5, -17), textcoords="offset points", fontsize=8.5, color="saddlebrown",
+        )
+    traditional_rmse = float(traditional_row["mean_rmse_mps"])
+    traditional_energy = float(traditional_row["mean_wh_per_km"])
+    axis.scatter(
+        [traditional_rmse], [traditional_energy], marker="*", s=430, color="crimson",
+        edgecolor="white", linewidth=1.5,
+        label=f"Traditional hardware (g={traditional.final_drive_ratio:g}, $s_m$={traditional.motor_scale:.2f})",
+        zorder=5,
+    )
+    dominating = [
+        row for row in frontier
+        if float(row["mean_rmse_mps"]) <= traditional_rmse
+        and float(row["mean_wh_per_km"]) < traditional_energy
+    ]
+    if dominating:
+        comparison = min(dominating, key=lambda row: float(row["mean_wh_per_km"]))
+        comparison_rmse = float(comparison["mean_rmse_mps"])
+        comparison_energy = float(comparison["mean_wh_per_km"])
+        saving = (traditional_energy - comparison_energy) / traditional_energy * 100.0
+        axis.annotate(
+            f"Strictly dominates traditional\n{saving:.1f}% less energy and lower RMSE",
+            xy=(comparison_rmse, comparison_energy),
+            xytext=(comparison_rmse + 0.004, comparison_energy + 12.0),
+            arrowprops={"arrowstyle": "->", "color": "tab:orange", "lw": 1.8},
+            fontsize=10, fontweight="bold", color="darkorange",
+        )
+    axis.annotate(
+        f"{traditional_energy:.1f} Wh/km\n{traditional_rmse:.4f} m/s",
+        xy=(traditional_rmse, traditional_energy),
+        xytext=(traditional_rmse + 0.003, traditional_energy + 9.0),
+        arrowprops={"arrowstyle": "->", "color": "crimson", "lw": 1.4},
+        fontsize=9, color="crimson",
+    )
+    axis.set(
+        xlabel="Mean training speed RMSE [m/s] (lower is better)",
+        ylabel="Mean training net battery energy [Wh/km] (lower is better)",
+        title="Hardware Pareto frontier after independent MPC tuning",
+    )
+    axis.grid(alpha=0.25)
+    axis.legend(loc="upper right")
+    fig.colorbar(scatter, ax=axis, label="Motor scale $s_m$")
+    fig.savefig(output, dpi=200)
     plt.close(fig)
 
 
@@ -587,6 +693,10 @@ def run_generality_experiment(
     _plot_training_map(
         training_summaries, selected_hardware, output_dir / "training_hardware_map.png"
     )
+    _plot_training_pareto(
+        training_summaries, traditional_hardware,
+        output_dir / "training_hardware_pareto.png",
+    )
     _plot_test_results(test_rows, output_dir / "test_generalization.png")
 
     test_by_role = {
@@ -602,6 +712,11 @@ def run_generality_experiment(
         / mean_test_energy["traditional"]
         * 100.0
     )
+    training_pareto = [
+        row for row, flag in zip(
+            training_summaries, training_hardware_pareto_flags(training_summaries)
+        ) if flag
+    ]
     report: dict[str, object] = {
         "mode": "quick" if quick else "full",
         "protocol": {
@@ -616,6 +731,7 @@ def run_generality_experiment(
         "test_scenarios": [scenario.name for scenario in testing],
         "traditional_hardware": asdict(traditional_hardware),
         "training_selected_hardware": asdict(selected_hardware),
+        "training_hardware_pareto_frontier": training_pareto,
         "mean_test_wh_per_km": mean_test_energy,
         "test_energy_improvement_percent": improvement,
         "test_results": test_selections,

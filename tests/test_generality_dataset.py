@@ -7,6 +7,7 @@ from codesign.generality_dataset import (
     ScenarioEvaluation,
     select_controller,
     select_training_hardware,
+    training_hardware_pareto_flags,
 )
 
 
@@ -88,3 +89,13 @@ def test_training_hardware_requires_all_training_scenarios() -> None:
     selected, summaries = select_training_hardware(selections, hardware, scenarios)
     assert selected == HardwareDesign(11.0, 0.75)
     assert sum(bool(row["feasible"]) for row in summaries) == 1
+
+
+def test_training_hardware_pareto_flags_reject_dominated_points() -> None:
+    summaries = [
+        {"feasible": True, "mean_rmse_mps": 0.30, "mean_wh_per_km": 300.0},
+        {"feasible": True, "mean_rmse_mps": 0.35, "mean_wh_per_km": 280.0},
+        {"feasible": True, "mean_rmse_mps": 0.36, "mean_wh_per_km": 310.0},
+        {"feasible": False, "mean_rmse_mps": 0.20, "mean_wh_per_km": 250.0},
+    ]
+    assert training_hardware_pareto_flags(summaries) == [True, True, False, False]
