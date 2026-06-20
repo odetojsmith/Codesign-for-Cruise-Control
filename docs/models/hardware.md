@@ -101,6 +101,10 @@ where $q$ is signed road grade. Required wheel force is $ma+F_{road}$. The full 
 then filtered by 120 km/h operation, 0–100 km/h in 10 s, 20% gradeability at 30 km/h, and exact
 drive-cycle feasibility before energy ranking.
 
+For the complete candidate algorithm, backward-cycle equations, tie-breaking rule, and numerical
+trace leading to $g=10.5,s_m=0.6$, see
+[Conventional separate design](../optimization/separate-design.md#stage-1-hardware-sizing).
+
 ## Implementation and tests
 
 - Implementation: [`config.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/config.py) and [`powertrain.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/powertrain.py)

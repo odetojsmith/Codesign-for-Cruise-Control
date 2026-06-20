@@ -148,6 +148,12 @@ For each hardware candidate:
 
 Choose the feasible candidate with minimum Wh/km. If candidates are within 0.5%, choose the one with lower motor mass. Freeze that hardware, then tune the MPC to minimize closed-loop energy for each RMSE bound.
 
+The implemented conventional grid contains 117 candidates and retains 97 after top-speed,
+full-power acceleration, 20% gradeability, and exact backward-cycle checks. The minimum cycle
+energy is 208.1829 Wh/km. Five $s_m=0.6$ designs lie within the 0.5% near-minimum set; because their
+45 kg motor masses tie, energy selects $g=10.5,s_m=0.6$. The detailed equations and intermediate
+force margins are maintained in `docs/optimization/separate-design.md`.
+
 ### 4.3 Integrated co-design
 
 Sweep the hardware grid

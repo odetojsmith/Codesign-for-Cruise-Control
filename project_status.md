@@ -78,6 +78,9 @@ validation, sourced motor data, and CARLA transfer validation are next.
 - Added a stricter 240-evaluation held-out test: traditional control is optimized first under
   RMSE ≤0.4 m/s, then the training-selected hardware must minimize energy without exceeding the
   traditional controller's achieved RMSE on each scenario.
+- Expanded MkDocs with the complete conventional hardware-sizing calculation: 117-point grid,
+  top-speed/acceleration/grade/cycle checks, backward power-flow equations, 0.5% mass tie-break,
+  intermediate force margins, and the numerical path selecting $g=10.5,s_m=0.6$.
 
 ## Verification
 
