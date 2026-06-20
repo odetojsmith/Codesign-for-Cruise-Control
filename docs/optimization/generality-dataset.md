@@ -1,0 +1,120 @@
+# Train/test generalization dataset
+
+!!! success "Held-out improvement confirmed"
+    Hardware selected using four training scenarios reduced mean energy by 9.66% on three unseen
+    test scenarios. The hardware was frozen before test evaluation, while MPC weights were
+    re-optimized independently for every scenario.
+
+## Experimental protocol
+
+The experiment separates hardware learning from controller adaptation:
+
+1. Generate a versioned manifest containing four training and three test scenarios.
+2. For every training scenario and hardware candidate, tune the MPC weights independently.
+3. Reject hardware unless at least one controller satisfies all constraints on every training
+   scenario.
+4. Select hardware minimizing the equally weighted mean training Wh/km.
+5. Freeze the selected hardware.
+6. On each held-out test scenario, tune only the MPC weights again. Test information never changes
+   the hardware.
+
+This models a realistic design hierarchy: the physical vehicle is manufactured once, but its
+controller can be calibrated for a known route or operating condition.
+
+## Dataset
+
+Scenario parameters vary speed, uphill and downhill grade, cycle count, payload, aerodynamic drag,
+initial motor temperature, battery power limits, and MetaDrive seed.
+
+| Split | Scenario | Speed | Grade | Distinguishing condition |
+|---|---|---:|---:|---|
+| Train | Alpine commuter | 15 m/s | +10/−10% | Nominal repeated hills |
+| Train | Loaded delivery | 13 m/s | +12/−8% | +150 kg payload |
+| Train | Fast foothills | 18 m/s | +7/−9% | +8% drag, high speed |
+| Train | Hot resort | 14 m/s | +9/−12% | Three cycles, 65 °C initial motor |
+| Test | Unseen steep | 16 m/s | +13/−11% | Unseen steep climb and seed |
+| Test | Heavy descent | 14.5 m/s | +10/−13% | +225 kg and limited charging |
+| Test | Long fast shift | 17 m/s | +8/−10% | Three cycles, +10% drag |
+
+![Training and test scenario profiles](../assets/validation/generality_dataset_profiles.png)
+
+Solid traces are training data and dashed traces are held-out test data. Test definitions are
+stored in the manifest before optimization, but are not evaluated during hardware selection.
+
+## Feasibility and objective
+
+For every scenario, controller tuning minimizes Wh/km subject to:
+
+- speed RMSE ≤0.8 m/s;
+- terminal progress ≥98.5%;
+- station distance error ≤12 m;
+- station speed ≤1.5 m/s;
+- episode completion with no MPC fallback;
+- motor temperature ≤112 °C.
+
+The hardware objective is the mean of the four independently optimized training Wh/km values. This
+gives every training scenario equal influence despite different route lengths.
+
+## Training result
+
+The quick grid proposed 15 hardware designs, rejected three that violated the shared 120 km/h
+motor-speed requirement, and ran 144 training evaluations: 12 hardware designs by three controller
+settings by four scenarios.
+
+| Hardware | Mean training energy | Maximum training RMSE |
+|---|---:|---:|
+| Conventional $g=10.5,s_m=0.60$ | 314.44 Wh/km | 0.4842 m/s |
+| Training-selected $g=11.5,s_m=0.75$ | **277.07 Wh/km** | 0.4843 m/s |
+
+![Training hardware map](../assets/validation/generality_training_hardware_map.png)
+
+Controller adaptation was active rather than nominally allowed: the selected hardware used
+$\log_{10}\lambda_E=-1$ on Alpine commuter and $0.5$ on the other three training scenarios.
+
+## Held-out test result
+
+Both hardware designs were frozen. For fairness, each received an independent three-point MPC
+search on every test scenario.
+
+| Held-out scenario | Traditional Wh/km | Selected Wh/km | Traditional RMSE | Selected RMSE |
+|---|---:|---:|---:|---:|
+| Unseen steep | 409.84 | **373.43** | 0.3270 | 0.4057 |
+| Heavy descent | 350.58 | **321.66** | 0.3764 | 0.3772 |
+| Long fast shift | 283.39 | **247.86** | 0.4498 | 0.4515 |
+| **Mean** | **347.94** | **314.32** | — | — |
+
+The training-selected hardware reduces mean held-out energy by **9.66%** and wins on every test
+scenario. All six test hardware/scenario combinations satisfy the 0.8 m/s tracking threshold and
+mission constraints.
+
+![Held-out generalization results](../assets/validation/generality_test_results.png)
+
+The unseen-steep case illustrates why the final comparison uses a constraint rather than a weighted
+score: selected hardware accepts a modest RMSE increase while remaining comfortably feasible and
+uses 8.88% less energy. The other two cases have nearly identical RMSE and lower energy.
+
+## Reproduce and inspect
+
+```bash
+codesign-generality-dataset --quick
+```
+
+`artifacts/generality_dataset/` contains:
+
+- `scenario_manifest.csv` and `.json`;
+- all raw controller evaluations;
+- per-scenario training controller selections;
+- the aggregate hardware table;
+- held-out test selections;
+- a resumable JSON evaluation cache;
+- plots and a machine-readable report.
+
+Implementation: [`generality_dataset.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/generality_dataset.py).
+
+## Interpretation boundary
+
+This result establishes generalization across a small designed family of longitudinal hill
+missions, not across arbitrary autonomous-driving scenes. The selected ratio is the largest
+candidate satisfying the shared 120 km/h motor-speed requirement, so refinement should concentrate
+near that feasibility boundary. Sourced efficiency/thermal data, more seeds, traffic, curvature,
+friction perturbations, and CARLA transfer remain necessary before a physical design claim.

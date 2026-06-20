@@ -59,6 +59,7 @@ nav:
       - MPC weight sampling: optimization/mpc-tuning.md
       - Hardware sensitivity: optimization/hardware-sensitivity.md
       - Mountain shuttle: optimization/mountain-shuttle.md
+      - Train/test generalization: optimization/generality-dataset.md
       - Separate design: optimization/separate-design.md
       - Integrated co-design: optimization/codesign.md
   - Validation:

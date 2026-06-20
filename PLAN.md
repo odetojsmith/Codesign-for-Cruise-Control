@@ -310,3 +310,45 @@ Primary recovery documents are `PLAN.md`, `project_status.md`, and the MkDocs pa
 `docs/optimization/mountain-shuttle.md`. Machine-readable experiment outputs are regenerated under
 `artifacts/mountain_shuttle/`; documentation copies of the selected plots are version controlled
 under `docs/assets/validation/`.
+
+## 11. Recoverable milestone — train/test generalization
+
+Milestone date: 2026-06-20.
+
+The scenario dataset contains four training and three disjoint held-out missions. It varies speed,
+positive/negative grade, cycle count, payload, drag, initial motor temperature, battery limits, and
+MetaDrive seed. Hardware is optimized using training results only. Once hardware is fixed, MPC
+weights remain adaptable and are re-optimized independently for every training or test scenario.
+
+Quick protocol:
+
+- 15 proposed hardware candidates: five final-drive ratios by three motor scales; three candidates
+  are rejected before training because they violate the shared 120 km/h motor-speed requirement.
+- Three MPC weight candidates per hardware/scenario pair.
+- 144 training evaluations and 18 held-out evaluations.
+- Hardware objective: minimum equally weighted mean training Wh/km.
+- Hard per-scenario limits: RMSE ≤0.8 m/s, progress ≥98.5%, station accuracy, temperature,
+  completion, and zero MPC fallback.
+
+Measured result:
+
+| Stage | Conventional $g=10.5,s_m=0.60$ | Training-selected $g=11.5,s_m=0.75$ | Reduction |
+|---|---:|---:|---:|
+| Mean training energy | 314.44 Wh/km | 277.07 Wh/km | 11.88% |
+| Mean held-out energy | 347.94 Wh/km | 314.32 Wh/km | 9.66% |
+
+The selected hardware uses less energy on every held-out scenario. All selected and conventional
+test runs satisfy the 0.8 m/s RMSE threshold and mission constraints. Controller adaptation is
+observable: selected hardware uses $\log_{10}\lambda_E=-1$ for one training scenario and $0.5$ for
+the other three; held-out controllers are independently selected after hardware freezing.
+
+Recovery command:
+
+```bash
+.venv/bin/python -m codesign.generality_dataset --quick
+```
+
+Primary evidence is documented in `docs/optimization/generality-dataset.md`; machine-readable
+manifests, evaluations, selections, cache, and report regenerate under
+`artifacts/generality_dataset/`. The selected ratio lies at the shared top-speed-feasible boundary,
+so the next experiment should refine that neighborhood without relaxing motor-speed requirements.

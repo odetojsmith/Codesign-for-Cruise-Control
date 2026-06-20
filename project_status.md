@@ -6,10 +6,11 @@ Last updated: 2026-06-20
 
 The simulator, hardware-dependent actuator, energy and thermal layers, PID/MPC controllers,
 conventional sizing, persistent evaluator, and nested/alternating co-design workflow are implemented
-and verified. The autonomous mountain-shuttle quick grid is the current recoverable milestone: it
-shows a 12.58% energy reduction for co-design at matched tracking and mission constraints. The
-searchable MkDocs site records the implementation and evidence. Full-resolution mountain search,
-unseen-condition robustness, sourced motor data, and CARLA transfer validation are next.
+and verified. The current recoverable milestone is a disjoint four-scenario training and
+three-scenario test experiment with scenario-specific MPC retuning after hardware freezing. The
+training-selected hardware reduces held-out energy while satisfying the shared tracking and mission
+constraints. The searchable MkDocs site records the implementation and evidence. Broader dataset
+validation, sourced motor data, and CARLA transfer validation are next.
 
 ## Completed
 
@@ -68,13 +69,19 @@ unseen-condition robustness, sourced motor data, and CARLA transfer validation a
   station stops, terminal progress, stop accuracy, battery-power, thermal, and MPC constraints.
 - Completed a 60-point mountain hardware/controller search. Conventional sizing selected
   $g=10.5,s_m=0.6$; closed-loop co-design selected $g=11.5,s_m=0.75$.
+- Added a versioned seven-scenario generalization dataset with four training and three disjoint test
+  missions varying grade, speed, cycles, payload, drag, temperature, battery limits, and seed.
+- Implemented leakage-free hardware selection on training data with independent MPC re-optimization
+  for every scenario before and after hardware is frozen.
+- Completed 144 training and 18 held-out controller evaluations with a resumable JSON cache after
+  rejecting three hardware candidates that violated the shared 120 km/h motor-speed requirement.
 
 ## Verification
 
 - Created an isolated Python 3.11 virtual environment and installed MetaDrive 0.4.3 plus the
   development dependencies.
 - `ruff check .`: passed.
-- `pytest`: 43 tests passed.
+- `pytest`: 46 tests passed.
 - `codesign-smoke --core-only`: passed; nominal mass 1575.0 kg, net energy 2.675 Wh, and
   recovered energy 1.396 Wh for the deterministic four-point core exercise.
 - `codesign-smoke --metadrive`: passed; MetaDrive initialized headlessly, downloaded and loaded
@@ -116,6 +123,11 @@ unseen-condition robustness, sourced motor data, and CARLA transfer validation a
 - The mountain co-design reduced friction-brake dissipation from 60.21 to 28.02 Wh and increased
   recovered battery energy from 181.02 to 212.99 Wh. Across the hardware grid, best feasible energy
   ranged from 314.7 to 211.0 Wh.
+- Generalization training selected $g=11.5,s_m=0.75$ using only four training scenarios. Mean
+  training energy was 277.07 Wh/km versus 314.44 Wh/km for conventional $g=10.5,s_m=0.6$.
+- With hardware frozen and MPC re-tuned independently on every held-out scenario, selected hardware
+  reduced mean test energy from 347.94 to 314.32 Wh/km (9.66%), won all three test cases, and kept
+  all RMSE values below the 0.8 m/s threshold without fallback or mission violations.
 
 ## Important limitations
 
@@ -123,18 +135,19 @@ unseen-condition robustness, sourced motor data, and CARLA transfer validation a
   motor map is still required before final experiments.
 - MetaDrive 0.4.3 imports slowly on this macOS environment and emits duplicate SDL-class warnings
   because both Pygame and OpenCV bundle SDL. The headless smoke episode still completes normally.
-- Full-resolution mountain/controller search, physical traffic-actor validation, multi-seed
+- Full-resolution generalization search, physical traffic-actor validation, broader multi-seed
   robustness experiments, parallel workers, and CARLA export are not implemented yet.
 
 ## Optimization boundary
 
-The complete separate-versus-integrated workflow now runs on a reduced grid. The next boundary is
-the full cached search followed by unseen-seed and perturbation validation.
+The reduced-grid idea now generalizes from four training missions to three held-out missions with
+scenario-specific controller adaptation. The next boundary is a refined hardware grid and broader
+unseen traffic, curvature, friction, seed, and parameter distributions.
 
 ## Next steps
 
-1. Refine the mountain grid around $g=11.5,s_m=0.75$ and run the full controller sample.
-2. Run unseen seeds plus payload, drag, tire-friction, and initial-temperature perturbations.
+1. Refine the ratio grid around the top-speed-feasible boundary solution $g=11.5,s_m=0.75$.
+2. Expand the dataset with unseen seeds, traffic, curvature, tire friction, and stochastic parameters.
 3. Replace the illustrative efficiency and thermal parameters with traceable motor data.
 4. Add a rendered, physically controlled MetaDrive traffic-actor safety scenario.
 5. Export selected designs for CARLA validation on Windows.

@@ -56,6 +56,7 @@ where to look for verification.
 | `codesign-optimize --quick` | Run cached quick nested and alternating co-design |
 | `codesign-hardware-sensitivity` | Compare nine hardware designs with one fixed MPC |
 | [`mountain_shuttle.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/mountain_shuttle.py) / `codesign-mountain-shuttle --quick` | Repeated ±10% hill mission and separate-versus-co-design comparison |
+| [`generality_dataset.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/generality_dataset.py) / `codesign-generality-dataset --quick` | Train/test scenario manifest, adaptive-controller hardware selection, and held-out evaluation |
 
 ## Tests
 
@@ -76,6 +77,7 @@ where to look for verification.
 | `test_co_design.py` | Energy selection after applying the RMSE constraint |
 | `test_hardware_sensitivity.py` | Hardware-grid matrix placement for plotting |
 | `test_mountain_shuttle.py` | Repeated mission definition, battery power caps, and thermal derating |
+| `test_generality_dataset.py` | Split isolation, profile consistency, per-scenario control tuning, and training-only hardware selection |
 
 ## Documentation
 
