@@ -11,7 +11,8 @@ three-scenario test experiment with scenario-specific MPC retuning after hardwar
 training-selected hardware reduces held-out energy while satisfying the shared tracking and mission
 constraints. A dense shared-controller sweep now exposes seven discrete nondominated samples. The
 MkDocs site is organized around the complete project logic, evidence ladder, interpretation limits,
-and prioritized roadmap. Matched-protocol dual frontiers are the immediate next experiment.
+and prioritized roadmap. A deterministic 30-training/10-test benchmark is now complete; stress-case
+mission feasibility and robust hardware objectives are the immediate next boundary.
 
 ## Completed
 
@@ -89,13 +90,20 @@ and prioritized roadmap. Matched-protocol dual frontiers are the immediate next 
   nondominated controller samples without visually connecting discrete points; three satisfy the
   per-scenario RMSE limit, and the best of those reduces energy by 11.27% versus traditional while
   also reducing mean RMSE.
+- Added a deterministic 40-case Latin-hypercube benchmark with 30 training, five unseen
+  interpolation, and five unseen stress cases. The run contains 5,400 training and 800 test
+  evaluations with a resumable cache and process-isolated workers.
+- Thirty-case training again selected $g=11.5,s_m=0.75$ and reduced mean energy by 10.35%.
+  It saved 7.77% on all five unseen interpolation cases and 4.54% over the three stress cases where
+  both designs satisfied the common mission constraints; two extreme stress missions were
+  infeasible for both designs.
 
 ## Verification
 
 - Created an isolated Python 3.11 virtual environment and installed MetaDrive 0.4.3 plus the
   development dependencies.
 - `ruff check .`: passed.
-- `pytest`: 52 tests passed.
+- `pytest`: 57 tests passed.
 - `codesign-smoke --core-only`: passed; nominal mass 1575.0 kg, net energy 2.675 Wh, and
   recovered energy 1.396 Wh for the deterministic four-point core exercise.
 - `codesign-smoke --metadrive`: passed; MetaDrive initialized headlessly, downloaded and loaded
@@ -153,24 +161,24 @@ and prioritized roadmap. Matched-protocol dual frontiers are the immediate next 
   motor map is still required before final experiments.
 - MetaDrive 0.4.3 imports slowly on this macOS environment and emits duplicate SDL-class warnings
   because both Pygame and OpenCV bundle SDL. The headless smoke episode still completes normally.
-- Full-resolution generalization search, physical traffic-actor validation, broader multi-seed
-  robustness experiments, parallel workers, and CARLA export are not implemented yet.
+- Physical traffic-actor validation, broader multi-seed uncertainty experiments, robust/CVaR
+  hardware objectives, and CARLA export are not implemented yet.
 
 ## Optimization boundary
 
-The reduced-grid idea now generalizes from four training missions to three held-out missions with
-scenario-specific controller adaptation. The next boundary is a refined hardware grid and broader
-unseen traffic, curvature, friction, seed, and parameter distributions.
+The 30-case training result generalizes cleanly to five unseen in-range combinations. Three of five
+out-of-range stress cases remain jointly feasible and energy-favorable; two are infeasible for both
+hardware designs. The next boundary is reference-attainability analysis and robust hardware
+selection before refining the hardware grid.
 
 ## Next steps
 
-1. Generate dense traditional and trained-hardware frontiers under identical shared and
-   scenario-adaptive controller protocols.
-2. Refine the ratio/motor grid around $g=11.5,s_m=0.75$ only after the matched protocol confirms
-   the current dominance result.
-3. Expand the dataset with multiple seeds, traffic, curvature, tire friction, and uncertainty.
-4. Replace illustrative efficiency and thermal parameters with traceable motor data.
-5. Export selected designs for CARLA validation on Windows.
+1. Audit reference attainability and failure causes in expanded stress cases 01 and 04.
+2. Add robust or CVaR hardware objectives and a controlled stress subset to training.
+3. Refine the ratio/motor grid around $g=11.5,s_m=0.75$ after the robust protocol is fixed.
+4. Expand the dataset with multiple seeds, traffic, curvature, tire friction, and uncertainty.
+5. Replace illustrative efficiency and thermal parameters with traceable motor data, then transfer
+   selected designs to CARLA on Windows.
 
 The acceptance gates and exact deliverables are specified in the MkDocs
 `Start Here → Prioritized next steps` page.

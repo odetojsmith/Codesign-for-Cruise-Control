@@ -1,38 +1,23 @@
 # Prioritized next steps
 
-The next work should strengthen the scientific comparison before making the simulator larger. The
-most useful immediate experiment is a matched-protocol dual-frontier study.
+The 30-training/10-test expansion is complete. It confirms all five unseen interpolation cases but
+also identifies two jointly infeasible stress missions and one feasible case without strict
+matched-RMSE dominance. The immediate work should now address this robustness boundary.
 
-## Priority 0 — complete the fair dual-frontier comparison
+## Priority 0 — diagnose and formalize stress robustness
 
-### Why this comes first
-
-The current evidence contains:
-
-- a dense 40-controller frontier for trained hardware using shared controller weights;
-- a single traditional reference derived from scenario-specific tuning;
-- separate held-out matched-RMSE selections.
-
-These results are encouraging but do not yet place both hardware designs on the same dense plot
-under exactly the same controller-adaptation rule.
-
-### Experiment
-
-For traditional $(10.5,0.60)$ and trained $(11.5,0.75)$ hardware:
-
-1. evaluate the same 40-point controller grid on all four training scenarios and all three test
-   scenarios;
-2. generate a **shared-controller** frontier by applying each weight pair to every scenario;
-3. generate a **scenario-adaptive** frontier by independently selecting a controller per scenario
-   under common RMSE bounds;
-4. report mean and worst-case RMSE, Wh/km, completion, thermal, station, and fallback metrics;
-5. show discrete nondominated markers without connecting lines;
-6. report dominance margins at RMSE bounds 0.30, 0.35, and 0.40 m/s.
+1. Audit whether `stress_01` and `stress_04` contain physically attainable speed/station
+   references under their payload, grade, and battery limits.
+2. Separate reference infeasibility from controller failure and hardware incapability.
+3. Add a stress subset to hardware training rather than exposing every extreme only at test time.
+4. Compare mean-energy selection with worst-case and CVaR objectives.
+5. Preserve common-threshold and strict matched-RMSE results as separate claims.
 
 ### Acceptance gate
 
-Proceed to a larger hardware search only if trained hardware retains a clear energy advantage under
-the same controller protocol and all non-RMSE constraints.
+Proceed to local hardware refinement only after the mission-feasibility audit and a robust objective
+are fixed. The current expanded benchmark saves energy on all eight common-feasible unseen cases,
+but universal extrapolation has not been established.
 
 ## Priority 1 — refine hardware near the current boundary
 
@@ -99,4 +84,3 @@ The next milestone should contain:
 - worst-case scenario metrics and constraint violations;
 - updated MkDocs evidence and a machine-readable report;
 - a Git commit pushed immediately after verification.
-

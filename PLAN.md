@@ -415,3 +415,26 @@ $(10.5,0.60)$ and trained $(11.5,0.75)$ hardware must receive identical dense co
 under both shared-controller and scenario-adaptive policies on training and held-out scenarios.
 Only after that comparison confirms the current energy advantage should the hardware grid be
 refined near $(11.5,0.75)$.
+
+## 14. Recoverable milestone — expanded 30/10 generalization
+
+Milestone date: 2026-06-21.
+
+The expanded dataset uses deterministic Latin-hypercube coverage over 13 scenario parameters:
+
+- 30 training cases;
+- five disjoint unseen interpolation cases within the training ranges;
+- five disjoint extrapolation stress cases with harder grade, payload, drag, temperature, and
+  battery-power limits.
+
+Twelve hardware designs receive 15 controller candidates on every training case (5,400 runs).
+After hardware freezing, traditional and selected designs each receive 40 controller candidates on
+every test case (800 runs). Total cached evaluations: 6,200.
+
+Training again selects $(g,s_m)=(11.5,0.75)$ and reduces mean energy from 319.80 to 286.71 Wh/km
+(10.35%). All five interpolation cases are feasible, match or improve traditional achieved RMSE,
+and reduce mean energy by 7.77%. Three of five stress cases are feasible for both designs under the
+common 0.4 m/s bound and reduce mean energy by 4.54%; two extremes are infeasible for both. One
+feasible stress case remains below 0.4 m/s but cannot match the traditional design's lower achieved
+RMSE. The next milestone is therefore robust objective design and stress-reference feasibility
+analysis, not a universal superiority claim.

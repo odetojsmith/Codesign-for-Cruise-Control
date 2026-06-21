@@ -13,6 +13,7 @@ where to look for verification.
 | [`pyproject.toml`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/pyproject.toml) | Package metadata, dependency groups, test/lint settings, CLI entry points |
 | [`mkdocs.yml`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/mkdocs.yml) | Documentation navigation, theme, search, math, and Mermaid configuration |
 | [`configs/default.yaml`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/configs/default.yaml) | Default hardware, vehicle, motor, battery, and simulation values |
+| `datasets/expanded_30_10_manifest.csv` | Versioned 30-training/10-test scenario parameters and split labels |
 
 ## Runtime package
 
@@ -59,6 +60,7 @@ where to look for verification.
 | [`generality_dataset.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/generality_dataset.py) / `codesign-generality-dataset --quick` | Train/test scenario manifest, adaptive-controller hardware selection, and held-out evaluation |
 | [`matched_rmse_test.py`](https://github.com/odetojsmith/Codesign-for-Cruise-Control/blob/main/src/codesign/matched_rmse_test.py) / `codesign-matched-rmse-test` | Traditional-first controller tuning and strict held-out RMSE/energy dominance test |
 | `trained_hardware_controller_sweep.py` / `codesign-trained-controller-sweep` | Forty-controller shared-policy sweep and discrete Pareto extraction for trained hardware |
+| `expanded_generality.py` / `codesign-expanded-generality --workers 6` | Deterministic 30/10 benchmark generation, parallel cached evaluation, robust reporting |
 
 ## Tests
 
@@ -82,6 +84,7 @@ where to look for verification.
 | `test_generality_dataset.py` | Split isolation, profile consistency, per-scenario control tuning, and training-only hardware selection |
 | `test_matched_rmse_test.py` | Energy selection under a scenario-specific comparison RMSE bound |
 | `test_trained_hardware_controller_sweep.py` | Dense-grid uniqueness and nondominated controller filtering |
+| `test_expanded_generality.py` | Split isolation, Latin-hypercube stratification, stress ranges, controller grids, feasible fallback |
 
 ## Documentation
 

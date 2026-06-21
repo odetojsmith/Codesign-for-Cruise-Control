@@ -234,8 +234,14 @@ class EvaluationStore:
         hardware: HardwareDesign,
         controller: ControllerDesign,
         result: ScenarioEvaluation,
+        *,
+        persist: bool = True,
     ) -> None:
         self.values[self.key(scenario, hardware, controller)] = asdict(result)
+        if persist:
+            self.flush()
+
+    def flush(self) -> None:
         self.path.write_text(json.dumps(self.values, indent=2) + "\n", encoding="utf-8")
 
 

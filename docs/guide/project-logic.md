@@ -165,8 +165,9 @@ Within the implemented illustrative MetaDrive/EV model, the evidence supports th
 
 > Closed-loop controller evaluation can guide hardware selection toward designs that use less
 > modeled battery energy while matching or improving tracking, and the advantage persists on the
-> current three held-out mountain-driving scenarios.
+> current unseen in-range mountain-driving scenarios. Under harder extrapolation, the selected
+> hardware retains an energy advantage where both designs remain feasible, but universal
+> feasibility and matched-RMSE dominance are not established.
 
 It does not yet establish production-EV energy accuracy, global optimality, arbitrary-scene
 generality, or CARLA transfer. Those boundaries determine the [next steps](next-steps.md).
-

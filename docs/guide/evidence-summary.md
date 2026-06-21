@@ -14,6 +14,7 @@ locations remain on the linked pages.
 | 5. Co-design benefit | Can closed-loop selection beat traditional sizing? | 12.58% mountain energy reduction at similar RMSE | Supported in the mountain case |
 | 6. Generalization | Does training-selected hardware work on unseen missions? | 9.22% mean held-out energy reduction over three test scenarios | Supported on the current split |
 | 7. Matched performance | Is the gain more than accepting worse tracking? | 7.12–9.60% energy reduction with lower RMSE in all three held-out cases | Supported at sampled controller resolution |
+| 8. Expanded generalization | Does the result survive 30 training and 10 unseen cases? | 7.77% interpolation and 4.54% feasible-stress energy reductions | Supported within the common feasible envelope |
 
 ## Hardware definitions used in comparisons
 
@@ -31,6 +32,9 @@ locations remain on the linked pages.
 | Mean held-out energy | 344.25 Wh/km | 312.50 Wh/km | 9.22% reduction |
 | Matched-RMSE held-out mean | 336.04 Wh/km | 308.35 Wh/km | 8.24% reduction with lower RMSE in every test case |
 | Dense shared-controller point | 311.15 Wh/km, 0.35378 m/s | 276.09 Wh/km, 0.33446 m/s | 11.27% less energy and lower mean RMSE |
+| Expanded 30-case training | 319.80 Wh/km | 286.71 Wh/km | 10.35% reduction across all 30 cases |
+| Expanded unseen interpolation | 320.89 Wh/km | 295.95 Wh/km | 7.77% reduction; 5/5 matched-RMSE wins |
+| Expanded feasible stress cases | 523.26 Wh/km | 499.52 Wh/km | 4.54% reduction; 3/5 cases feasible for both |
 
 ## Pareto-plot reading rule
 
@@ -68,10 +72,13 @@ highest-priority next experiment.
 Within this software model and scenario family, controller-aware hardware selection produces a
 meaningful energy benefit that is not explained only by accepting larger tracking error.
 
+The expanded benchmark sharpens the boundary: all five unseen in-range combinations support the
+claim, while deliberately out-of-range stress conditions contain two infeasible missions and one
+case where selected hardware cannot match the traditional design's achieved RMSE.
+
 ## Claims not yet supported
 
 - global optimality over continuous hardware and controller spaces;
 - robustness across broad traffic, curvature, friction, weather, and seed distributions;
 - quantitatively accurate production-motor energy or thermal behavior;
 - transfer of rankings from MetaDrive to CARLA or a physical vehicle.
-

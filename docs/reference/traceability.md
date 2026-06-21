@@ -41,6 +41,7 @@ evidence. “Planned” rows are specifications rather than completed claims.
 | Train/test hardware isolation | `generality_dataset.py` | `test_generality_dataset.py` | Versioned split and held-out report |
 | Matched-RMSE comparison | `matched_rmse_test.py` | `test_matched_rmse_test.py` | Three held-out dominance results |
 | Dense trained-hardware controller frontier | `trained_hardware_controller_sweep.py` | `test_trained_hardware_controller_sweep.py` | 40-point CSV and discrete Pareto plot |
+| Expanded 30/10 generalization | `expanded_generality.py` | `test_expanded_generality.py` | 6,200-entry cache, fixed manifest, grouped unseen results |
 
 ## Planned requirements
 
